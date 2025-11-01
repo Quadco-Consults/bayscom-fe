@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,12 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { InventoryItem } from '@/lib/types';
 import { Plus, Edit, Trash2, AlertTriangle, Package, X } from 'lucide-react';
 
-export default function InventoryPage() {
-  // State management
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
-  const [items, setItems] = useState<InventoryItem[]>([
+// Default demo products
+const defaultProducts: InventoryItem[] = [
     {
       id: '1',
       sku: 'LPG-CYL-6KG',
@@ -95,29 +91,93 @@ export default function InventoryPage() {
       createdAt: '2024-01-01',
       updatedAt: '2024-01-01',
     },
-  ]);
+  ];
+
+export default function InventoryPage() {
+  // State management
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [classificationFilter, setClassificationFilter] = useState<string>('all'); // all, asset, consumable
+  const [items, setItems] = useState<InventoryItem[]>(defaultProducts);
+
+  // Load categories from localStorage
+  useEffect(() => {
+    const savedCategories = localStorage.getItem('itemCategories');
+    if (savedCategories) {
+      try {
+        setCategories(JSON.parse(savedCategories));
+      } catch (error) {
+        console.error('Failed to parse categories:', error);
+      }
+    }
+  }, []);
+
+  // Load products from localStorage or use defaults
+  useEffect(() => {
+    const savedProducts = localStorage.getItem('products');
+    if (savedProducts) {
+      try {
+        const products = JSON.parse(savedProducts);
+        setItems(products);
+      } catch (error) {
+        console.error('Failed to parse products:', error);
+        // Use default products if parse fails
+        localStorage.setItem('products', JSON.stringify(defaultProducts));
+      }
+    } else {
+      // First time load - save default products to localStorage
+      localStorage.setItem('products', JSON.stringify(defaultProducts));
+    }
+  }, []);
+
+  // Save products to localStorage whenever items change
+  useEffect(() => {
+    if (items.length > 0) {
+      localStorage.setItem('products', JSON.stringify(items));
+    }
+  }, [items]);
 
   // Form state
   const [formData, setFormData] = useState({
     sku: '',
     name: '',
-    category: 'lpg-cylinders',
+    categoryId: '',
+    subcategoryId: '',
+    classification: 'consumable', // asset or consumable
     description: '',
     unit: 'pieces',
     reorderLevel: '',
     reorderQuantity: '',
     currentStock: '',
     unitPrice: '',
-    supplier: '',
     location: '',
   });
 
+  // Get available subcategories based on selected category
+  const getAvailableSubcategories = () => {
+    if (!formData.categoryId) return [];
+    const category = categories.find(c => c.id === formData.categoryId);
+    return category?.subcategories || [];
+  };
+
   // Handle form input changes
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFormData(prev => {
+      // If changing category, reset subcategory
+      if (field === 'categoryId') {
+        return {
+          ...prev,
+          categoryId: value,
+          subcategoryId: '',
+        };
+      }
+      return {
+        ...prev,
+        [field]: value
+      };
+    });
   };
 
   // Handle add item
@@ -125,14 +185,15 @@ export default function InventoryPage() {
     setFormData({
       sku: '',
       name: '',
-      category: 'lpg-cylinders',
+      categoryId: categories.length > 0 ? categories[0].id : '',
+      subcategoryId: '',
+      classification: 'consumable',
       description: '',
       unit: 'pieces',
       reorderLevel: '',
       reorderQuantity: '',
       currentStock: '',
       unitPrice: '',
-      supplier: '',
       location: '',
     });
     setShowAddModal(true);
@@ -144,14 +205,15 @@ export default function InventoryPage() {
     setFormData({
       sku: item.sku,
       name: item.name,
-      category: item.category,
+      categoryId: (item as any).categoryId || '',
+      subcategoryId: (item as any).subcategoryId || '',
+      classification: (item as any).classification || 'consumable',
       description: item.description,
       unit: item.unit,
       reorderLevel: item.reorderLevel.toString(),
       reorderQuantity: item.reorderQuantity.toString(),
       currentStock: item.currentStock.toString(),
       unitPrice: item.unitPrice.toString(),
-      supplier: item.supplier,
       location: item.location,
     });
     setShowEditModal(true);
@@ -171,18 +233,21 @@ export default function InventoryPage() {
 
     if (showEditModal && selectedItem) {
       // Update existing item
-      const updatedItem: InventoryItem = {
+      const updatedItem: any = {
         ...selectedItem,
         sku: formData.sku,
         name: formData.name,
-        category: formData.category,
+        category: formData.categoryId, // Keep for backward compatibility
+        categoryId: formData.categoryId,
+        subcategoryId: formData.subcategoryId,
+        classification: formData.classification,
         description: formData.description,
         unit: formData.unit,
         reorderLevel: parseInt(formData.reorderLevel),
         reorderQuantity: parseInt(formData.reorderQuantity),
         currentStock: parseInt(formData.currentStock),
         unitPrice: parseFloat(formData.unitPrice),
-        supplier: formData.supplier,
+        supplier: '', // Not required anymore
         location: formData.location,
         updatedAt: new Date().toISOString().split('T')[0],
       };
@@ -193,18 +258,21 @@ export default function InventoryPage() {
       alert('Item updated successfully!');
     } else {
       // Create new item
-      const newItem: InventoryItem = {
+      const newItem: any = {
         id: String(items.length + 1),
         sku: formData.sku,
         name: formData.name,
-        category: formData.category,
+        category: formData.categoryId, // Keep for backward compatibility
+        categoryId: formData.categoryId,
+        subcategoryId: formData.subcategoryId,
+        classification: formData.classification,
         description: formData.description,
         unit: formData.unit,
         reorderLevel: parseInt(formData.reorderLevel),
         reorderQuantity: parseInt(formData.reorderQuantity),
         currentStock: parseInt(formData.currentStock),
         unitPrice: parseFloat(formData.unitPrice),
-        supplier: formData.supplier,
+        supplier: '', // Not required anymore
         location: formData.location,
         createdAt: new Date().toISOString().split('T')[0],
         updatedAt: new Date().toISOString().split('T')[0],
@@ -214,6 +282,20 @@ export default function InventoryPage() {
       setShowAddModal(false);
       alert('Item added successfully!');
     }
+  };
+
+  // Get category name by ID
+  const getCategoryName = (categoryId: string) => {
+    const category = categories.find(c => c.id === categoryId);
+    return category?.name || 'Unknown Category';
+  };
+
+  // Get subcategory name by ID
+  const getSubcategoryName = (categoryId: string, subcategoryId: string) => {
+    if (!subcategoryId) return '';
+    const category = categories.find(c => c.id === categoryId);
+    const subcategory = category?.subcategories?.find((s: any) => s.id === subcategoryId);
+    return subcategory?.name || '';
   };
 
   const getCategoryLabel = (category: string) => {
@@ -233,8 +315,14 @@ export default function InventoryPage() {
     }
   };
 
-  const lowStockItems = items.filter((item) => item.currentStock <= item.reorderLevel);
-  const totalValue = items.reduce((acc, item) => acc + item.currentStock * item.unitPrice, 0);
+  // Filter items by classification
+  const filteredItems = items.filter((item) => {
+    if (classificationFilter === 'all') return true;
+    return (item as any).classification === classificationFilter;
+  });
+
+  const lowStockItems = filteredItems.filter((item) => item.currentStock <= item.reorderLevel);
+  const totalValue = filteredItems.reduce((acc, item) => acc + item.currentStock * item.unitPrice, 0);
 
   return (
     <DashboardLayout>
@@ -242,13 +330,24 @@ export default function InventoryPage() {
         {/* Page Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">LPG Accessories Inventory</h1>
-            <p className="text-gray-500">Manage LPG cylinders, regulators, and accessories</p>
+            <h1 className="text-3xl font-bold text-gray-900">All Products</h1>
+            <p className="text-gray-500">Manage all products across categories and subcategories</p>
           </div>
-          <Button onClick={handleAddItem} className="bg-[#2D5016] hover:bg-[#1F3509]">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Item
-          </Button>
+          <div className="flex items-center gap-3">
+            <select
+              value={classificationFilter}
+              onChange={(e) => setClassificationFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2D5016] focus:border-transparent"
+            >
+              <option value="all">All Products</option>
+              <option value="asset">Assets Only</option>
+              <option value="consumable">Consumables Only</option>
+            </select>
+            <Button onClick={handleAddItem} className="bg-[#2D5016] hover:bg-[#1F3509]">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Product
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -258,7 +357,7 @@ export default function InventoryPage() {
               <CardTitle className="text-sm font-medium text-gray-500">Total Items</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{items.length}</div>
+              <div className="text-2xl font-bold">{filteredItems.length}</div>
             </CardContent>
           </Card>
           <Card>
@@ -286,7 +385,7 @@ export default function InventoryPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {items.reduce((acc, item) => acc + item.currentStock, 0)}
+                {filteredItems.reduce((acc, item) => acc + item.currentStock, 0)}
               </div>
             </CardContent>
           </Card>
@@ -316,8 +415,9 @@ export default function InventoryPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {items.map((item) => {
+              {filteredItems.map((item) => {
                 const status = getStockStatus(item);
+                const classification = (item as any).classification || 'consumable';
                 return (
                   <div key={item.id} className="flex items-center justify-between border-b pb-4 last:border-0">
                     <div className="flex items-center gap-4 flex-1">
@@ -329,8 +429,14 @@ export default function InventoryPage() {
                           <h3 className="font-medium">{item.name}</h3>
                           <Badge variant="outline">{item.sku}</Badge>
                           <Badge variant={status.variant}>{status.label}</Badge>
+                          <Badge className={classification === 'asset' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}>
+                            {classification === 'asset' ? 'Asset' : 'Consumable'}
+                          </Badge>
                         </div>
-                        <p className="text-sm text-gray-500">{getCategoryLabel(item.category)}</p>
+                        <p className="text-sm text-gray-500">
+                          {(item as any).categoryId ? getCategoryName((item as any).categoryId) : getCategoryLabel(item.category)}
+                          {(item as any).subcategoryId && ` > ${getSubcategoryName((item as any).categoryId, (item as any).subcategoryId)}`}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-8">
@@ -379,7 +485,7 @@ export default function InventoryPage() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">Add New Item</h2>
+                <h2 className="text-xl font-bold text-gray-900">Add New Product</h2>
                 <button
                   className="px-3 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50"
                   onClick={() => setShowAddModal(false)}
@@ -421,16 +527,59 @@ export default function InventoryPage() {
                       Category *
                     </label>
                     <select
-                      value={formData.category}
-                      onChange={(e) => handleInputChange('category', e.target.value)}
+                      value={formData.categoryId}
+                      onChange={(e) => handleInputChange('categoryId', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
                     >
-                      <option value="lpg-cylinders">LPG Cylinders</option>
-                      <option value="lpg-regulators">LPG Regulators</option>
-                      <option value="lpg-hoses">LPG Hoses</option>
-                      <option value="lpg-valves">LPG Valves</option>
-                      <option value="lpg-accessories">LPG Accessories</option>
+                      <option value="">Select a category...</option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Subcategory {formData.categoryId && getAvailableSubcategories().length > 0 && '*'}
+                    </label>
+                    <select
+                      value={formData.subcategoryId}
+                      onChange={(e) => handleInputChange('subcategoryId', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required={formData.categoryId && getAvailableSubcategories().length > 0}
+                      disabled={!formData.categoryId || getAvailableSubcategories().length === 0}
+                    >
+                      <option value="">
+                        {!formData.categoryId
+                          ? 'Select category first...'
+                          : getAvailableSubcategories().length === 0
+                          ? 'No subcategories available'
+                          : 'Select a subcategory...'}
+                      </option>
+                      {getAvailableSubcategories().map((subcategory: any) => (
+                        <option key={subcategory.id} value={subcategory.id}>
+                          {subcategory.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Classification *
+                    </label>
+                    <select
+                      value={formData.classification}
+                      onChange={(e) => handleInputChange('classification', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="consumable">Consumable</option>
+                      <option value="asset">Asset</option>
                     </select>
                   </div>
                   <div>
@@ -524,27 +673,15 @@ export default function InventoryPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Supplier *
+                      Location/Warehouse *
                     </label>
                     <Input
-                      value={formData.supplier}
-                      onChange={(e) => handleInputChange('supplier', e.target.value)}
-                      placeholder="Supplier name"
+                      value={formData.location}
+                      onChange={(e) => handleInputChange('location', e.target.value)}
+                      placeholder="e.g., Warehouse A"
                       required
                     />
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Location/Warehouse *
-                  </label>
-                  <Input
-                    value={formData.location}
-                    onChange={(e) => handleInputChange('location', e.target.value)}
-                    placeholder="e.g., Warehouse A"
-                    required
-                  />
                 </div>
 
                 {/* Form Actions */}
@@ -560,7 +697,7 @@ export default function InventoryPage() {
                     type="submit"
                     className="px-4 py-2 text-sm bg-[#2D5016] hover:bg-[#1F3509] text-white rounded"
                   >
-                    Add Item
+                    Add Product
                   </button>
                 </div>
               </form>
@@ -573,7 +710,7 @@ export default function InventoryPage() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">Edit Item</h2>
+                <h2 className="text-xl font-bold text-gray-900">Edit Product</h2>
                 <button
                   className="px-3 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50"
                   onClick={() => {
@@ -618,16 +755,59 @@ export default function InventoryPage() {
                       Category *
                     </label>
                     <select
-                      value={formData.category}
-                      onChange={(e) => handleInputChange('category', e.target.value)}
+                      value={formData.categoryId}
+                      onChange={(e) => handleInputChange('categoryId', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
                     >
-                      <option value="lpg-cylinders">LPG Cylinders</option>
-                      <option value="lpg-regulators">LPG Regulators</option>
-                      <option value="lpg-hoses">LPG Hoses</option>
-                      <option value="lpg-valves">LPG Valves</option>
-                      <option value="lpg-accessories">LPG Accessories</option>
+                      <option value="">Select a category...</option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Subcategory {formData.categoryId && getAvailableSubcategories().length > 0 && '*'}
+                    </label>
+                    <select
+                      value={formData.subcategoryId}
+                      onChange={(e) => handleInputChange('subcategoryId', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required={formData.categoryId && getAvailableSubcategories().length > 0}
+                      disabled={!formData.categoryId || getAvailableSubcategories().length === 0}
+                    >
+                      <option value="">
+                        {!formData.categoryId
+                          ? 'Select category first...'
+                          : getAvailableSubcategories().length === 0
+                          ? 'No subcategories available'
+                          : 'Select a subcategory...'}
+                      </option>
+                      {getAvailableSubcategories().map((subcategory: any) => (
+                        <option key={subcategory.id} value={subcategory.id}>
+                          {subcategory.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Classification *
+                    </label>
+                    <select
+                      value={formData.classification}
+                      onChange={(e) => handleInputChange('classification', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="consumable">Consumable</option>
+                      <option value="asset">Asset</option>
                     </select>
                   </div>
                   <div>
@@ -721,27 +901,15 @@ export default function InventoryPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Supplier *
+                      Location/Warehouse *
                     </label>
                     <Input
-                      value={formData.supplier}
-                      onChange={(e) => handleInputChange('supplier', e.target.value)}
-                      placeholder="Supplier name"
+                      value={formData.location}
+                      onChange={(e) => handleInputChange('location', e.target.value)}
+                      placeholder="e.g., Warehouse A"
                       required
                     />
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Location/Warehouse *
-                  </label>
-                  <Input
-                    value={formData.location}
-                    onChange={(e) => handleInputChange('location', e.target.value)}
-                    placeholder="e.g., Warehouse A"
-                    required
-                  />
                 </div>
 
                 {/* Form Actions */}
@@ -760,7 +928,7 @@ export default function InventoryPage() {
                     type="submit"
                     className="px-4 py-2 text-sm bg-[#2D5016] hover:bg-[#1F3509] text-white rounded"
                   >
-                    Update Item
+                    Update Product
                   </button>
                 </div>
               </form>

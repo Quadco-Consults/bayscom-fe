@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Building2, Phone, Mail, MapPin, Star, X } from 'lucide-react';
+import { Plus, Building2, Phone, Mail, MapPin, Star, X, Tag, Check } from 'lucide-react';
 
 export default function VendorsPage() {
   // State management
@@ -13,11 +13,13 @@ export default function VendorsPage() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<any>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [vendors, setVendors] = useState([
     {
       id: 'V-001',
       name: 'ABC Supplies Ltd',
-      category: 'Office Supplies',
+      categories: ['VC-001'], // Office Supplies
       email: 'contact@abcsupplies.com',
       phone: '+234 801 234 5678',
       address: 'Lagos, Nigeria',
@@ -29,7 +31,7 @@ export default function VendorsPage() {
     {
       id: 'V-002',
       name: 'Tech Solutions Inc',
-      category: 'IT Equipment',
+      categories: ['VC-002'], // IT Equipment
       email: 'sales@techsolutions.com',
       phone: '+234 802 345 6789',
       address: 'Abuja, Nigeria',
@@ -41,7 +43,7 @@ export default function VendorsPage() {
     {
       id: 'V-003',
       name: 'AutoParts Nigeria',
-      category: 'Vehicle Parts',
+      categories: ['VC-003'], // Vehicle Parts
       email: 'info@autoparts.ng',
       phone: '+234 803 456 7890',
       address: 'Port Harcourt, Nigeria',
@@ -53,7 +55,7 @@ export default function VendorsPage() {
     {
       id: 'V-004',
       name: 'Industrial Tools Co',
-      category: 'Industrial Equipment',
+      categories: ['VC-004'], // Industrial Equipment
       email: 'orders@industrialtools.com',
       phone: '+234 804 567 8901',
       address: 'Kano, Nigeria',
@@ -67,7 +69,7 @@ export default function VendorsPage() {
   // Form state
   const [formData, setFormData] = useState({
     name: '',
-    category: '',
+    categories: [] as string[],
     email: '',
     phone: '',
     address: '',
@@ -75,12 +77,42 @@ export default function VendorsPage() {
     status: 'active',
   });
 
+  // Load categories from localStorage
+  useEffect(() => {
+    const savedCategories = localStorage.getItem('vendorCategories');
+    if (savedCategories) {
+      try {
+        setCategories(JSON.parse(savedCategories));
+      } catch (error) {
+        console.error('Failed to parse vendor categories:', error);
+      }
+    }
+  }, []);
+
   // Handle form input changes
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+  };
+
+  // Handle category selection (multi-select)
+  const toggleCategory = (categoryId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      categories: prev.categories.includes(categoryId)
+        ? prev.categories.filter(id => id !== categoryId)
+        : [...prev.categories, categoryId]
+    }));
+  };
+
+  // Get category names from IDs
+  const getCategoryNames = (categoryIds: string[]) => {
+    return categoryIds
+      .map(id => categories.find(c => c.id === id)?.name)
+      .filter(Boolean)
+      .join(', ');
   };
 
   // Handle view vendor details
@@ -94,7 +126,7 @@ export default function VendorsPage() {
     setSelectedVendor(vendor);
     setFormData({
       name: vendor.name,
-      category: vendor.category,
+      categories: vendor.categories || [],
       email: vendor.email,
       phone: vendor.phone,
       address: vendor.address,
@@ -108,12 +140,17 @@ export default function VendorsPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (formData.categories.length === 0) {
+      alert('Please select at least one category');
+      return;
+    }
+
     if (showEditModal && selectedVendor) {
       // Update existing vendor
       const updatedVendor = {
         ...selectedVendor,
         name: formData.name,
-        category: formData.category,
+        categories: formData.categories,
         email: formData.email,
         phone: formData.phone,
         address: formData.address,
@@ -133,7 +170,7 @@ export default function VendorsPage() {
       const newVendor = {
         id: `V-${String(vendors.length + 1).padStart(3, '0')}`,
         name: formData.name,
-        category: formData.category,
+        categories: formData.categories,
         email: formData.email,
         phone: formData.phone,
         address: formData.address,
@@ -153,7 +190,7 @@ export default function VendorsPage() {
     // Reset form
     setFormData({
       name: '',
-      category: '',
+      categories: [],
       email: '',
       phone: '',
       address: '',
@@ -249,14 +286,57 @@ export default function VendorsPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Category *
+                      Categories * (Select multiple)
                     </label>
-                    <Input
-                      value={formData.category}
-                      onChange={(e) => handleInputChange('category', e.target.value)}
-                      placeholder="e.g., Office Supplies"
-                      required
-                    />
+                    <div className="relative">
+                      <button
+                        type="button"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded bg-white text-left hover:bg-gray-50"
+                        onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                      >
+                        {formData.categories.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {formData.categories.map(catId => {
+                              const cat = categories.find(c => c.id === catId);
+                              return cat ? (
+                                <span key={catId} className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800">
+                                  {cat.name}
+                                </span>
+                              ) : null;
+                            })}
+                          </div>
+                        ) : (
+                          <span className="text-gray-500">Select categories...</span>
+                        )}
+                      </button>
+                      {showCategoryDropdown && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
+                          {categories.length > 0 ? (
+                            categories.map((category) => (
+                              <label
+                                key={category.id}
+                                className="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={formData.categories.includes(category.id)}
+                                  onChange={() => toggleCategory(category.id)}
+                                  className="mr-2"
+                                />
+                                <div className="flex items-center space-x-2">
+                                  <Tag className="h-4 w-4 text-blue-600" />
+                                  <span className="text-sm">{category.name}</span>
+                                </div>
+                              </label>
+                            ))
+                          ) : (
+                            <div className="px-3 py-2 text-sm text-gray-500">
+                              No categories available. Create categories first.
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -382,8 +462,22 @@ export default function VendorsPage() {
                         <p className="text-sm text-gray-900">{selectedVendor.name}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-600">Category</label>
-                        <p className="text-sm text-gray-900">{selectedVendor.category}</p>
+                        <label className="block text-sm font-medium text-gray-600">Categories</label>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {selectedVendor.categories && selectedVendor.categories.length > 0 ? (
+                            selectedVendor.categories.map((catId: string) => {
+                              const cat = categories.find(c => c.id === catId);
+                              return cat ? (
+                                <span key={catId} className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800">
+                                  <Tag className="h-3 w-3 mr-1" />
+                                  {cat.name}
+                                </span>
+                              ) : null;
+                            })
+                          ) : (
+                            <span className="text-sm text-gray-500">No categories</span>
+                          )}
+                        </div>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-600">Status</label>
@@ -502,14 +596,57 @@ export default function VendorsPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Category *
+                      Categories * (Select multiple)
                     </label>
-                    <Input
-                      value={formData.category}
-                      onChange={(e) => handleInputChange('category', e.target.value)}
-                      placeholder="e.g., Office Supplies"
-                      required
-                    />
+                    <div className="relative">
+                      <button
+                        type="button"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded bg-white text-left hover:bg-gray-50"
+                        onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                      >
+                        {formData.categories.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {formData.categories.map(catId => {
+                              const cat = categories.find(c => c.id === catId);
+                              return cat ? (
+                                <span key={catId} className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800">
+                                  {cat.name}
+                                </span>
+                              ) : null;
+                            })}
+                          </div>
+                        ) : (
+                          <span className="text-gray-500">Select categories...</span>
+                        )}
+                      </button>
+                      {showCategoryDropdown && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
+                          {categories.length > 0 ? (
+                            categories.map((category) => (
+                              <label
+                                key={category.id}
+                                className="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={formData.categories.includes(category.id)}
+                                  onChange={() => toggleCategory(category.id)}
+                                  className="mr-2"
+                                />
+                                <div className="flex items-center space-x-2">
+                                  <Tag className="h-4 w-4 text-blue-600" />
+                                  <span className="text-sm">{category.name}</span>
+                                </div>
+                              </label>
+                            ))
+                          ) : (
+                            <div className="px-3 py-2 text-sm text-gray-500">
+                              No categories available. Create categories first.
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -676,9 +813,22 @@ export default function VendorsPage() {
                 <div className="space-y-4">
                   {/* Header */}
                   <div className="flex items-start justify-between">
-                    <div>
+                    <div className="flex-1">
                       <h3 className="text-lg font-semibold text-gray-900">{vendor.name}</h3>
-                      <p className="text-sm text-gray-600">{vendor.category}</p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {vendor.categories && vendor.categories.length > 0 ? (
+                          vendor.categories.map((catId: string) => {
+                            const cat = categories.find(c => c.id === catId);
+                            return cat ? (
+                              <span key={catId} className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800">
+                                {cat.name}
+                              </span>
+                            ) : null;
+                          })
+                        ) : (
+                          <span className="text-sm text-gray-500">No categories</span>
+                        )}
+                      </div>
                     </div>
                     <span className={getStatusBadge(vendor.status)}>
                       {vendor.status.charAt(0).toUpperCase() + vendor.status.slice(1)}
@@ -775,7 +925,22 @@ export default function VendorsPage() {
                           <p className="text-xs text-gray-600">{vendor.id}</p>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-gray-600">{vendor.category}</td>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-wrap gap-1">
+                          {vendor.categories && vendor.categories.length > 0 ? (
+                            vendor.categories.map((catId: string) => {
+                              const cat = categories.find(c => c.id === catId);
+                              return cat ? (
+                                <span key={catId} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-blue-100 text-blue-800">
+                                  {cat.name}
+                                </span>
+                              ) : null;
+                            })
+                          ) : (
+                            <span className="text-xs text-gray-500">-</span>
+                          )}
+                        </div>
+                      </td>
                       <td className="py-3 px-4">
                         <div>
                           <p className="text-gray-900">{vendor.email}</p>

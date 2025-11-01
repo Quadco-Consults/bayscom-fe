@@ -10,6 +10,9 @@ import { procurementAPI } from '@/lib/api/procurement';
 import { configAPI } from '@/lib/api/config';
 
 export default function PurchaseRequestPage() {
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+
   // State management
   const [purchaseRequests, setPurchaseRequests] = useState([
     // Mock data - replace with actual API calls
@@ -21,6 +24,11 @@ export default function PurchaseRequestPage() {
       amount: '₦150,000',
       date: '2024-10-25',
       items: 3,
+      itemDetails: [
+        { name: 'Office Pens (Blue)', quantity: '50', unit_price: '200', description: 'Blue ballpoint pens' },
+        { name: 'A4 Paper (Ream)', quantity: '20', unit_price: '3500', description: 'Premium A4 paper' },
+        { name: 'Folders', quantity: '100', unit_price: '700', description: 'Document folders' }
+      ]
     },
     {
       id: 'PR-2024-002',
@@ -29,7 +37,12 @@ export default function PurchaseRequestPage() {
       status: 'approved',
       amount: '₦500,000',
       date: '2024-10-20',
-      items: 5,
+      items: 3,
+      itemDetails: [
+        { name: 'Engine Oil Change', quantity: '3', unit_price: '50000', description: 'Full synthetic oil' },
+        { name: 'Brake Pads', quantity: '6', unit_price: '25000', description: 'Heavy duty brake pads' },
+        { name: 'Tire Replacement', quantity: '8', unit_price: '25000', description: 'Premium tires' }
+      ]
     },
     {
       id: 'PR-2024-003',
@@ -38,7 +51,12 @@ export default function PurchaseRequestPage() {
       status: 'rejected',
       amount: '₦1,200,000',
       date: '2024-10-18',
-      items: 8,
+      items: 3,
+      itemDetails: [
+        { name: 'Dell Laptops', quantity: '5', unit_price: '150000', description: 'Dell Latitude series' },
+        { name: 'Network Router', quantity: '2', unit_price: '75000', description: 'Enterprise router' },
+        { name: 'UPS Systems', quantity: '3', unit_price: '100000', description: '2KVA UPS units' }
+      ]
     },
   ]);
 
@@ -52,6 +70,8 @@ export default function PurchaseRequestPage() {
   // View details state
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [editingRequest, setEditingRequest] = useState(null);
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -144,35 +164,60 @@ export default function PurchaseRequestPage() {
 
     try {
       const totalAmount = calculateTotal();
-      const requestData = {
-        title: formData.title,
-        description: formData.description,
-        department: formData.department,
-        total_amount: totalAmount,
-        requested_by: 1, // This should be the current user ID
-        status: 'pending'
-      };
 
-      // Try to create via API, fall back to mock if needed
-      let newRequest;
-      try {
-        newRequest = await procurementAPI.purchaseRequests.create(requestData);
-      } catch (apiError) {
-        console.warn('API creation failed, using mock:', apiError);
-        // Create mock request
-        newRequest = {
-          id: `PR-2024-${String(purchaseRequests.length + 1).padStart(3, '0')}`,
+      if (editingRequest) {
+        // Update existing request
+        const updatedRequest = {
+          ...editingRequest,
           title: formData.title,
+          description: formData.description,
           department: departments.find(d => d.id === parseInt(formData.department))?.name || formData.department,
-          status: 'pending',
           amount: `₦${totalAmount.toLocaleString()}`,
-          date: new Date().toISOString().split('T')[0],
           items: formData.items.length,
+          itemDetails: formData.items,
         };
-      }
 
-      // Add to local state
-      setPurchaseRequests(prev => [newRequest, ...prev]);
+        setPurchaseRequests(prev =>
+          prev.map(pr => pr.id === editingRequest.id ? updatedRequest : pr)
+        );
+
+        alert('Purchase Request updated successfully!');
+      } else {
+        // Create new request
+        const requestData = {
+          title: formData.title,
+          description: formData.description,
+          department: formData.department,
+          total_amount: totalAmount,
+          requested_by: 1, // This should be the current user ID
+          status: 'pending'
+        };
+
+        // Try to create via API, fall back to mock if needed
+        let newRequest;
+        try {
+          newRequest = await procurementAPI.purchaseRequests.create(requestData);
+        } catch (apiError) {
+          console.warn('API creation failed, using mock:', apiError);
+          // Create mock request with full item details
+          newRequest = {
+            id: `PR-2024-${String(purchaseRequests.length + 4).padStart(3, '0')}`,
+            title: formData.title,
+            description: formData.description,
+            department: departments.find(d => d.id === parseInt(formData.department))?.name || formData.department,
+            status: 'pending',
+            amount: `₦${totalAmount.toLocaleString()}`,
+            date: new Date().toISOString().split('T')[0],
+            items: formData.items.length,
+            itemDetails: formData.items, // Save the actual items
+          };
+        }
+
+        // Add to local state
+        setPurchaseRequests(prev => [newRequest, ...prev]);
+
+        alert('Purchase request created successfully!');
+      }
 
       // Reset form and close dialog
       setFormData({
@@ -183,12 +228,11 @@ export default function PurchaseRequestPage() {
         items: [{ name: '', quantity: '', unit_price: '', description: '' }]
       });
       setSelectedDepartment('');
+      setEditingRequest(null);
       setShowCreateForm(false);
-
-      alert('Purchase request created successfully!');
     } catch (error) {
-      console.error('Failed to create purchase request:', error);
-      alert('Failed to create purchase request. Please try again.');
+      console.error('Failed to save purchase request:', error);
+      alert('Failed to save purchase request. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -198,6 +242,74 @@ export default function PurchaseRequestPage() {
   const handleViewRequest = (request: any) => {
     setSelectedRequest(request);
     setShowViewModal(true);
+  };
+
+  // Handle editing PR
+  const handleEditRequest = (request: any) => {
+    setEditingRequest(request);
+    const dept = departments.find((d: any) => d.name === request.department);
+    setSelectedDepartment(request.department);
+    setFormData({
+      title: request.title,
+      description: request.description || '',
+      department: dept?.id?.toString() || '',
+      total_amount: request.amount,
+      items: request.itemDetails || [{ name: '', quantity: '', unit_price: '', description: '' }]
+    });
+    setShowCreateForm(true);
+  };
+
+  // Handle approve
+  const handleApprove = (request: any) => {
+    const approvedRequest = { ...request, status: 'approved' };
+
+    setPurchaseRequests(prev =>
+      prev.map(pr =>
+        pr.id === request.id
+          ? approvedRequest
+          : pr
+      )
+    );
+    setSelectedRequest(approvedRequest);
+
+    // Save to localStorage for Purchase Order page
+    const existingApprovedPRs = localStorage.getItem('approvedPRs');
+    let approvedPRsList = [];
+
+    if (existingApprovedPRs) {
+      try {
+        approvedPRsList = JSON.parse(existingApprovedPRs);
+      } catch (error) {
+        console.error('Failed to parse approved PRs:', error);
+      }
+    }
+
+    // Add this PR to the list if not already there
+    if (!approvedPRsList.find((pr: any) => pr.id === request.id)) {
+      approvedPRsList.push(approvedRequest);
+      localStorage.setItem('approvedPRs', JSON.stringify(approvedPRsList));
+    }
+
+    alert('Purchase Request approved successfully! It will now appear in the Purchase Orders page for conversion.');
+  };
+
+  // Handle reject
+  const handleReject = (request: any) => {
+    const reason = prompt('Enter rejection reason (optional):');
+    setPurchaseRequests(prev =>
+      prev.map(pr =>
+        pr.id === request.id
+          ? { ...pr, status: 'rejected', rejectionReason: reason }
+          : pr
+      )
+    );
+    setSelectedRequest({ ...request, status: 'rejected' });
+    alert('Purchase Request rejected.');
+  };
+
+  // Handle print
+  const handlePrint = () => {
+    window.print();
   };
 
   const getStatusIcon = (status: string) => {
@@ -227,8 +339,26 @@ export default function PurchaseRequestPage() {
     }
   };
 
+  // Filter purchase requests based on search query
+  const filteredPurchaseRequests = purchaseRequests.filter((request) => {
+    if (!searchQuery) return true;
+
+    const query = searchQuery.toLowerCase();
+    return (
+      request.id.toLowerCase().includes(query) ||
+      request.title.toLowerCase().includes(query) ||
+      request.department.toLowerCase().includes(query) ||
+      request.status.toLowerCase().includes(query) ||
+      request.amount.toLowerCase().includes(query)
+    );
+  });
+
   return (
-    <DashboardLayout>
+    <DashboardLayout
+      searchValue={searchQuery}
+      onSearchChange={setSearchQuery}
+      searchPlaceholder="Search purchase requests..."
+    >
       <div className="space-y-6">
         {/* Page Header */}
         <div className="flex items-center justify-between">
@@ -250,10 +380,15 @@ export default function PurchaseRequestPage() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">Create New Purchase Request</h2>
+                <h2 className="text-xl font-bold text-gray-900">
+                  {editingRequest ? 'Edit Purchase Request' : 'Create New Purchase Request'}
+                </h2>
                 <button
                   className="px-3 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50"
-                  onClick={() => setShowCreateForm(false)}
+                  onClick={() => {
+                    setShowCreateForm(false);
+                    setEditingRequest(null);
+                  }}
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -319,12 +454,8 @@ export default function PurchaseRequestPage() {
 
                 {/* Items Section */}
                 <div>
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="mb-4">
                     <h3 className="text-lg font-medium text-gray-900">Request Items</h3>
-                    <button type="button" onClick={addItem} className="px-3 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50 inline-flex items-center">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Item
-                    </button>
                   </div>
 
                   <div className="space-y-4">
@@ -410,6 +541,18 @@ export default function PurchaseRequestPage() {
                     ))}
                   </div>
 
+                  {/* Add Item Button - Now at the bottom */}
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={addItem}
+                      className="w-full px-4 py-3 text-sm border-2 border-dashed border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 inline-flex items-center justify-center transition-colors"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Another Item
+                    </button>
+                  </div>
+
                   {/* Total Amount */}
                   <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                     <div className="flex justify-between items-center">
@@ -426,7 +569,10 @@ export default function PurchaseRequestPage() {
                   <button
                     type="button"
                     className="px-4 py-2 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                    onClick={() => setShowCreateForm(false)}
+                    onClick={() => {
+                      setShowCreateForm(false);
+                      setEditingRequest(null);
+                    }}
                     disabled={loading}
                   >
                     Cancel
@@ -436,7 +582,7 @@ export default function PurchaseRequestPage() {
                     className="px-4 py-2 text-sm bg-[#2D5016] hover:bg-[#1F3509] text-white rounded disabled:opacity-50"
                     disabled={loading || !formData.title || !formData.department}
                   >
-                    {loading ? 'Creating...' : 'Create Purchase Request'}
+                    {loading ? (editingRequest ? 'Updating...' : 'Creating...') : (editingRequest ? 'Update Purchase Request' : 'Create Purchase Request')}
                   </button>
                 </div>
               </form>
@@ -480,6 +626,12 @@ export default function PurchaseRequestPage() {
                         <label className="block text-sm font-medium text-gray-600">Date Requested</label>
                         <p className="text-sm text-gray-900">{selectedRequest.date}</p>
                       </div>
+                      {selectedRequest.description && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-600">Description</label>
+                          <p className="text-sm text-gray-900">{selectedRequest.description}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -507,7 +659,7 @@ export default function PurchaseRequestPage() {
                   </div>
                 </div>
 
-                {/* Mock Items Section */}
+                {/* Items Section */}
                 <div>
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Requested Items</h3>
                   <div className="border border-gray-200 rounded-lg overflow-hidden">
@@ -515,78 +667,35 @@ export default function PurchaseRequestPage() {
                       <thead className="bg-gray-50">
                         <tr>
                           <th className="text-left py-3 px-4 font-medium text-gray-900">Item</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Description</th>
                           <th className="text-left py-3 px-4 font-medium text-gray-900">Quantity</th>
                           <th className="text-left py-3 px-4 font-medium text-gray-900">Unit Price</th>
                           <th className="text-left py-3 px-4 font-medium text-gray-900">Total</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {/* Mock items data based on the PR */}
-                        {selectedRequest.id === 'PR-2024-001' && (
-                          <>
-                            <tr className="border-t border-gray-100">
-                              <td className="py-3 px-4">Office Pens (Blue)</td>
-                              <td className="py-3 px-4">50 pcs</td>
-                              <td className="py-3 px-4">₦200</td>
-                              <td className="py-3 px-4">₦10,000</td>
-                            </tr>
-                            <tr className="border-t border-gray-100">
-                              <td className="py-3 px-4">A4 Paper (Ream)</td>
-                              <td className="py-3 px-4">20 reams</td>
-                              <td className="py-3 px-4">₦3,500</td>
-                              <td className="py-3 px-4">₦70,000</td>
-                            </tr>
-                            <tr className="border-t border-gray-100">
-                              <td className="py-3 px-4">Folders</td>
-                              <td className="py-3 px-4">100 pcs</td>
-                              <td className="py-3 px-4">₦700</td>
-                              <td className="py-3 px-4">₦70,000</td>
-                            </tr>
-                          </>
-                        )}
-                        {selectedRequest.id === 'PR-2024-002' && (
-                          <>
-                            <tr className="border-t border-gray-100">
-                              <td className="py-3 px-4">Engine Oil Change</td>
-                              <td className="py-3 px-4">3 vehicles</td>
-                              <td className="py-3 px-4">₦50,000</td>
-                              <td className="py-3 px-4">₦150,000</td>
-                            </tr>
-                            <tr className="border-t border-gray-100">
-                              <td className="py-3 px-4">Brake Pads</td>
-                              <td className="py-3 px-4">6 sets</td>
-                              <td className="py-3 px-4">₦25,000</td>
-                              <td className="py-3 px-4">₦150,000</td>
-                            </tr>
-                            <tr className="border-t border-gray-100">
-                              <td className="py-3 px-4">Tire Replacement</td>
-                              <td className="py-3 px-4">8 tires</td>
-                              <td className="py-3 px-4">₦25,000</td>
-                              <td className="py-3 px-4">₦200,000</td>
-                            </tr>
-                          </>
-                        )}
-                        {selectedRequest.id === 'PR-2024-003' && (
-                          <>
-                            <tr className="border-t border-gray-100">
-                              <td className="py-3 px-4">Dell Laptops</td>
-                              <td className="py-3 px-4">5 units</td>
-                              <td className="py-3 px-4">₦150,000</td>
-                              <td className="py-3 px-4">₦750,000</td>
-                            </tr>
-                            <tr className="border-t border-gray-100">
-                              <td className="py-3 px-4">Network Router</td>
-                              <td className="py-3 px-4">2 units</td>
-                              <td className="py-3 px-4">₦75,000</td>
-                              <td className="py-3 px-4">₦150,000</td>
-                            </tr>
-                            <tr className="border-t border-gray-100">
-                              <td className="py-3 px-4">UPS Systems</td>
-                              <td className="py-3 px-4">3 units</td>
-                              <td className="py-3 px-4">₦100,000</td>
-                              <td className="py-3 px-4">₦300,000</td>
-                            </tr>
-                          </>
+                        {selectedRequest.itemDetails && selectedRequest.itemDetails.length > 0 ? (
+                          selectedRequest.itemDetails.map((item: any, index: number) => {
+                            const quantity = parseFloat(item.quantity) || 0;
+                            const unitPrice = parseFloat(item.unit_price) || 0;
+                            const total = quantity * unitPrice;
+
+                            return (
+                              <tr key={index} className="border-t border-gray-100">
+                                <td className="py-3 px-4 font-medium text-gray-900">{item.name}</td>
+                                <td className="py-3 px-4 text-gray-600">{item.description || '-'}</td>
+                                <td className="py-3 px-4">{quantity}</td>
+                                <td className="py-3 px-4">₦{unitPrice.toLocaleString()}</td>
+                                <td className="py-3 px-4 font-medium">₦{total.toLocaleString()}</td>
+                              </tr>
+                            );
+                          })
+                        ) : (
+                          <tr>
+                            <td colSpan={5} className="py-8 px-4 text-center text-gray-500">
+                              No items found
+                            </td>
+                          </tr>
                         )}
                       </tbody>
                     </table>
@@ -603,15 +712,24 @@ export default function PurchaseRequestPage() {
                   </button>
                   {selectedRequest.status === 'pending' && (
                     <>
-                      <button className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded">
+                      <button
+                        className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded"
+                        onClick={() => handleApprove(selectedRequest)}
+                      >
                         Approve
                       </button>
-                      <button className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded">
+                      <button
+                        className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded"
+                        onClick={() => handleReject(selectedRequest)}
+                      >
                         Reject
                       </button>
                     </>
                   )}
-                  <button className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded">
+                  <button
+                    className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded"
+                    onClick={handlePrint}
+                  >
                     Print
                   </button>
                 </div>
@@ -700,8 +818,9 @@ export default function PurchaseRequestPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {purchaseRequests.map((request) => (
-                    <tr key={request.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  {filteredPurchaseRequests.length > 0 ? (
+                    filteredPurchaseRequests.map((request) => (
+                      <tr key={request.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-4">
                         <div className="flex items-center">
                           {getStatusIcon(request.status)}
@@ -727,14 +846,24 @@ export default function PurchaseRequestPage() {
                             View
                           </button>
                           {request.status === 'pending' && (
-                            <button className="px-3 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50">
+                            <button
+                              className="px-3 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50"
+                              onClick={() => handleEditRequest(request)}
+                            >
                               Edit
                             </button>
                           )}
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  ))
+                  ) : (
+                    <tr>
+                      <td colSpan={8} className="py-8 px-4 text-center text-gray-500">
+                        {searchQuery ? `No purchase requests found matching "${searchQuery}"` : 'No purchase requests found'}
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

@@ -3,7 +3,13 @@
 import { Bell, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
-export function Header() {
+interface HeaderProps {
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  searchPlaceholder?: string;
+}
+
+export function Header({ searchValue = '', onSearchChange, searchPlaceholder = 'Search...' }: HeaderProps) {
   return (
     <header className="flex h-16 items-center justify-between border-b bg-white px-6">
       {/* Search */}
@@ -12,8 +18,10 @@ export function Header() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <Input
             type="search"
-            placeholder="Search..."
+            placeholder={searchPlaceholder}
             className="pl-10"
+            value={searchValue}
+            onChange={(e) => onSearchChange?.(e.target.value)}
           />
         </div>
       </div>
