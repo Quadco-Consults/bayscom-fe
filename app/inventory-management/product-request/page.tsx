@@ -5,7 +5,7 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, FileText, Clock, CheckCircle, XCircle, X, ChevronDown } from 'lucide-react';
+import { Plus, FileText, Clock, CheckCircle, XCircle, X, ChevronDown, Search } from 'lucide-react';
 
 export default function ProductRequestPage() {
   // Search state
@@ -366,25 +366,43 @@ export default function ProductRequestPage() {
   });
 
   return (
-    <DashboardLayout
-      searchValue={searchQuery}
-      onSearchChange={setSearchQuery}
-      searchPlaceholder="Search product requests..."
-    >
+    <DashboardLayout>
       <div className="space-y-6">
         {/* Page Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Product Request</h1>
-            <p className="text-gray-600">Request products from inventory for your department</p>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Product Request</h1>
+              <p className="text-gray-600">Request products from inventory for your department</p>
+            </div>
+            <Button
+              onClick={() => setShowCreateForm(true)}
+              className="bg-[#2D5016] hover:bg-[#1F3509]"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              New Request
+            </Button>
           </div>
-          <Button
-            onClick={() => setShowCreateForm(true)}
-            className="bg-[#2D5016] hover:bg-[#1F3509]"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            New Request
-          </Button>
+
+          {/* Search Input */}
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Search product requests..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-4"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Stats Cards */}

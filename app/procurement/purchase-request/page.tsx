@@ -5,7 +5,7 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, FileText, Clock, CheckCircle, XCircle, X, ChevronDown } from 'lucide-react';
+import { Plus, FileText, Clock, CheckCircle, XCircle, X, ChevronDown, Search } from 'lucide-react';
 import { procurementAPI } from '@/lib/api/procurement';
 import { configAPI } from '@/lib/api/config';
 
@@ -354,25 +354,43 @@ export default function PurchaseRequestPage() {
   });
 
   return (
-    <DashboardLayout
-      searchValue={searchQuery}
-      onSearchChange={setSearchQuery}
-      searchPlaceholder="Search purchase requests..."
-    >
+    <DashboardLayout>
       <div className="space-y-6">
         {/* Page Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Purchase Requests</h1>
-            <p className="text-gray-600">Manage and track all purchase requests</p>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Purchase Requests</h1>
+              <p className="text-gray-600">Manage and track all purchase requests</p>
+            </div>
+            <button
+              className="bg-[#2D5016] hover:bg-[#1F3509] text-white px-4 py-2 rounded-md inline-flex items-center text-sm font-medium"
+              onClick={() => setShowCreateForm(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New Request
+            </button>
           </div>
-          <button
-            className="bg-[#2D5016] hover:bg-[#1F3509] text-white px-4 py-2 rounded-md inline-flex items-center text-sm font-medium"
-            onClick={() => setShowCreateForm(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            New Request
-          </button>
+
+          {/* Search Input */}
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Search purchase requests..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-4"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Create Form Modal Overlay */}

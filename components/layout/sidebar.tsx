@@ -78,14 +78,14 @@ const menuSections = [
             icon: ShoppingBag,
           },
           {
-            title: 'Goods Receipt Note',
-            href: '/inventory-management/goods-receipt',
-            icon: ClipboardList,
-          },
-          {
             title: 'Store',
             href: '/inventory-management/store',
             icon: Warehouse,
+          },
+          {
+            title: 'Transfer History',
+            href: '/inventory-management/transfer-history',
+            icon: ClipboardList,
           },
         ],
       },

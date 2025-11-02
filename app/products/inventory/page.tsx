@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { InventoryItem } from '@/lib/types';
-import { Plus, Edit, Trash2, AlertTriangle, Package, X } from 'lucide-react';
+import { Plus, Edit, Trash2, AlertTriangle, Package, X, Search, ArrowRightLeft } from 'lucide-react';
 
 // Default demo products
 const defaultProducts: InventoryItem[] = [
@@ -101,6 +101,10 @@ export default function InventoryPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [classificationFilter, setClassificationFilter] = useState<string>('all'); // all, asset, consumable
   const [items, setItems] = useState<InventoryItem[]>(defaultProducts);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [selectedItemsForTransfer, setSelectedItemsForTransfer] = useState<string[]>([]);
+  const [transferQuantities, setTransferQuantities] = useState<{[key: string]: string}>({});
 
   // Load categories from localStorage
   useEffect(() => {
@@ -227,6 +231,142 @@ export default function InventoryPage() {
     }
   };
 
+  // Handle checkbox toggle
+  const handleItemSelect = (itemId: string) => {
+    setSelectedItemsForTransfer(prev => {
+      if (prev.includes(itemId)) {
+        // Remove from selection
+        const newQuantities = { ...transferQuantities };
+        delete newQuantities[itemId];
+        setTransferQuantities(newQuantities);
+        return prev.filter(id => id !== itemId);
+      } else {
+        // Add to selection
+        return [...prev, itemId];
+      }
+    });
+  };
+
+  // Handle select all
+  const handleSelectAll = () => {
+    if (selectedItemsForTransfer.length === filteredItems.length) {
+      // Deselect all
+      setSelectedItemsForTransfer([]);
+      setTransferQuantities({});
+    } else {
+      // Select all
+      setSelectedItemsForTransfer(filteredItems.map(item => item.id));
+    }
+  };
+
+  // Open transfer modal
+  const openTransferModal = () => {
+    if (selectedItemsForTransfer.length === 0) {
+      alert('Please select at least one item to transfer');
+      return;
+    }
+    setShowTransferModal(true);
+  };
+
+  // Handle quantity change for specific item
+  const handleQuantityChange = (itemId: string, value: string) => {
+    setTransferQuantities(prev => ({
+      ...prev,
+      [itemId]: value
+    }));
+  };
+
+  // Process transfer to store
+  const processTransferToStore = () => {
+    // Validate quantities
+    const selectedItems = items.filter(item => selectedItemsForTransfer.includes(item.id));
+
+    for (const item of selectedItems) {
+      const quantity = parseInt(transferQuantities[item.id] || '0');
+      if (isNaN(quantity) || quantity <= 0) {
+        alert(`Please enter a valid quantity for ${item.name}`);
+        return;
+      }
+      if (quantity > item.currentStock) {
+        alert(`Cannot transfer more than available stock for ${item.name}`);
+        return;
+      }
+    }
+
+    // Load store items
+    const storeItems = JSON.parse(localStorage.getItem('storeItems') || '[]');
+    const transferHistory = JSON.parse(localStorage.getItem('transferHistory') || '[]');
+
+    // Process each selected item
+    selectedItems.forEach(item => {
+      const quantity = parseInt(transferQuantities[item.id]);
+
+      const existingStoreItem = storeItems.find((s: any) => s.productId === item.id);
+
+      if (existingStoreItem) {
+        // Update existing store item
+        existingStoreItem.quantity += quantity;
+        existingStoreItem.lastTransfer = {
+          type: 'in',
+          quantity,
+          from: 'Products Inventory',
+          date: new Date().toISOString(),
+        };
+      } else {
+        // Create new store item
+        const newStoreItem = {
+          id: Date.now().toString() + Math.random(),
+          productId: item.id,
+          sku: item.sku,
+          name: item.name,
+          category: (item as any).categoryId || item.category,
+          quantity,
+          unit: item.unit,
+          location: 'Main Store',
+          lastTransfer: {
+            type: 'in',
+            quantity,
+            from: 'Products Inventory',
+            date: new Date().toISOString(),
+          }
+        };
+        storeItems.push(newStoreItem);
+      }
+
+      // Save transfer history
+      transferHistory.push({
+        id: `TR-${Date.now()}-${Math.random()}`,
+        type: 'product-to-store',
+        productName: item.name,
+        sku: item.sku,
+        quantity,
+        from: 'Products Inventory',
+        to: 'Store',
+        date: new Date().toISOString(),
+        performedBy: 'Current User',
+      });
+    });
+
+    localStorage.setItem('storeItems', JSON.stringify(storeItems));
+    localStorage.setItem('transferHistory', JSON.stringify(transferHistory));
+
+    // Update product stock
+    const updatedItems = items.map(item => {
+      if (selectedItemsForTransfer.includes(item.id)) {
+        const quantity = parseInt(transferQuantities[item.id]);
+        return { ...item, currentStock: item.currentStock - quantity };
+      }
+      return item;
+    });
+    setItems(updatedItems);
+    localStorage.setItem('products', JSON.stringify(updatedItems));
+
+    alert(`${selectedItemsForTransfer.length} item(s) transferred to Store successfully!`);
+    setShowTransferModal(false);
+    setSelectedItemsForTransfer([]);
+    setTransferQuantities({});
+  };
+
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -315,10 +455,19 @@ export default function InventoryPage() {
     }
   };
 
-  // Filter items by classification
+  // Filter items by classification and search query
   const filteredItems = items.filter((item) => {
-    if (classificationFilter === 'all') return true;
-    return (item as any).classification === classificationFilter;
+    // Filter by classification
+    const classificationMatch = classificationFilter === 'all' || (item as any).classification === classificationFilter;
+
+    // Filter by search query
+    const searchMatch = searchQuery === '' ||
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.location.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return classificationMatch && searchMatch;
   });
 
   const lowStockItems = filteredItems.filter((item) => item.currentStock <= item.reorderLevel);
@@ -328,25 +477,84 @@ export default function InventoryPage() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Page Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">All Products</h1>
-            <p className="text-gray-500">Manage all products across categories and subcategories</p>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">All Products</h1>
+              <p className="text-gray-500">Manage all products across categories and subcategories</p>
+            </div>
+            <div className="flex items-center gap-3">
+              {selectedItemsForTransfer.length > 0 && (
+                <Button
+                  onClick={openTransferModal}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <ArrowRightLeft className="mr-2 h-4 w-4" />
+                  Transfer to Store ({selectedItemsForTransfer.length})
+                </Button>
+              )}
+              <Button onClick={handleAddItem} className="bg-[#2D5016] hover:bg-[#1F3509]">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Product
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <select
-              value={classificationFilter}
-              onChange={(e) => setClassificationFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2D5016] focus:border-transparent"
-            >
-              <option value="all">All Products</option>
-              <option value="asset">Assets Only</option>
-              <option value="consumable">Consumables Only</option>
-            </select>
-            <Button onClick={handleAddItem} className="bg-[#2D5016] hover:bg-[#1F3509]">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Product
-            </Button>
+
+          {/* Search and Filter Section */}
+          <div className="flex items-center gap-4">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search by name, SKU, description, or location..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Classification Filter - Button Group */}
+            <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+              <button
+                onClick={() => setClassificationFilter('all')}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                  classificationFilter === 'all'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                All Products
+              </button>
+              <button
+                onClick={() => setClassificationFilter('asset')}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                  classificationFilter === 'asset'
+                    ? 'bg-white text-purple-700 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Assets
+              </button>
+              <button
+                onClick={() => setClassificationFilter('consumable')}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                  classificationFilter === 'consumable'
+                    ? 'bg-white text-green-700 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Consumables
+              </button>
+            </div>
           </div>
         </div>
 
@@ -411,16 +619,35 @@ export default function InventoryPage() {
         {/* Inventory Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Inventory Items</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Inventory Items</CardTitle>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectedItemsForTransfer.length === filteredItems.length && filteredItems.length > 0}
+                  onChange={handleSelectAll}
+                  className="h-4 w-4 text-[#2D5016] focus:ring-[#2D5016] border-gray-300 rounded"
+                />
+                <span className="text-sm text-gray-600">Select All</span>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {filteredItems.map((item) => {
                 const status = getStockStatus(item);
                 const classification = (item as any).classification || 'consumable';
+                const isSelected = selectedItemsForTransfer.includes(item.id);
                 return (
                   <div key={item.id} className="flex items-center justify-between border-b pb-4 last:border-0">
                     <div className="flex items-center gap-4 flex-1">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleItemSelect(item.id)}
+                        disabled={item.currentStock === 0}
+                        className="h-5 w-5 text-[#2D5016] focus:ring-[#2D5016] border-gray-300 rounded disabled:opacity-50"
+                      />
                       <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
                         <Package className="h-6 w-6 text-blue-600" />
                       </div>
@@ -932,6 +1159,94 @@ export default function InventoryPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Transfer to Store Modal */}
+        {showTransferModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900">Transfer to Store</h2>
+                <button
+                  className="px-3 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50"
+                  onClick={() => {
+                    setShowTransferModal(false);
+                    setSelectedItemsForTransfer([]);
+                    setTransferQuantities({});
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-800">
+                    <strong>Transferring {selectedItemsForTransfer.length} item(s) from Products Inventory to Store</strong>
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Items to Transfer</h3>
+                  <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Product</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">SKU</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Available</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Quantity to Transfer *</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {items.filter(item => selectedItemsForTransfer.includes(item.id)).map((item) => (
+                          <tr key={item.id} className="border-t border-gray-100">
+                            <td className="py-3 px-4 font-medium text-gray-900">{item.name}</td>
+                            <td className="py-3 px-4 text-gray-600">{item.sku}</td>
+                            <td className="py-3 px-4 text-gray-600">{item.currentStock} {item.unit}</td>
+                            <td className="py-3 px-4">
+                              <Input
+                                type="number"
+                                value={transferQuantities[item.id] || ''}
+                                onChange={(e) => handleQuantityChange(item.id, e.target.value)}
+                                placeholder="0"
+                                min="1"
+                                max={item.currentStock}
+                                className="w-32"
+                                required
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="flex space-x-3 pt-4 border-t">
+                  <button
+                    type="button"
+                    className="flex-1 px-4 py-2 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50"
+                    onClick={() => {
+                      setShowTransferModal(false);
+                      setSelectedItemsForTransfer([]);
+                      setTransferQuantities({});
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={processTransferToStore}
+                    className="flex-1 px-4 py-2 text-sm bg-[#2D5016] hover:bg-[#1F3509] text-white rounded inline-flex items-center justify-center"
+                  >
+                    <ArrowRightLeft className="mr-2 h-4 w-4" />
+                    Transfer {selectedItemsForTransfer.length} Item(s) to Store
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

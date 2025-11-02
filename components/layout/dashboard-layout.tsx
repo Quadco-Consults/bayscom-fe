@@ -6,21 +6,14 @@ import { Header } from './header';
 
 interface DashboardLayoutProps {
   children: ReactNode;
-  searchValue?: string;
-  onSearchChange?: (value: string) => void;
-  searchPlaceholder?: string;
 }
 
-export function DashboardLayout({ children, searchValue, onSearchChange, searchPlaceholder }: DashboardLayoutProps) {
+export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header
-          searchValue={searchValue}
-          onSearchChange={onSearchChange}
-          searchPlaceholder={searchPlaceholder}
-        />
+        <Header />
         <main className="flex-1 overflow-y-auto bg-gray-100 p-6">
           {children}
         </main>
