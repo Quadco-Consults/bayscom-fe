@@ -42,7 +42,7 @@ export default function StorePage() {
   const [transferType, setTransferType] = useState<'in' | 'out'>('in');
   const [selectedItem, setSelectedItem] = useState<StoreItem | null>(null);
   const [products, setProducts] = useState<any[]>([]);
-  const [selectedItemsForTransfer, setSelectedItemsForTransfer] = useState<string[]>([]);
+  const [selectedItemsInModal, setSelectedItemsInModal] = useState<string[]>([]);
   const [transferQuantities, setTransferQuantities] = useState<{[key: string]: string}>({});
 
   // Transfer form state
@@ -102,20 +102,48 @@ export default function StorePage() {
     setShowTransferModal(true);
   };
 
-  // Handle transfer out (from Store to Products)
-  const handleTransferOut = (item: StoreItem) => {
-    setSelectedItem(item);
-    setTransferType('out');
-    setTransferForm({
-      productId: item.productId,
-      sku: item.sku,
-      name: item.name,
-      quantity: '',
-      from: 'store',
-      to: 'products',
-      notes: '',
+  // Handle checkbox toggle in modal
+  const handleItemSelectInModal = (itemId: string) => {
+    setSelectedItemsInModal(prev => {
+      if (prev.includes(itemId)) {
+        // Remove from selection
+        const newQuantities = { ...transferQuantities };
+        delete newQuantities[itemId];
+        setTransferQuantities(newQuantities);
+        return prev.filter(id => id !== itemId);
+      } else {
+        // Add to selection
+        return [...prev, itemId];
+      }
     });
+  };
+
+  // Handle select all in modal
+  const handleSelectAllInModal = () => {
+    if (selectedItemsInModal.length === filteredItems.length) {
+      // Deselect all
+      setSelectedItemsInModal([]);
+      setTransferQuantities({});
+    } else {
+      // Select all
+      setSelectedItemsInModal(filteredItems.map(item => item.id));
+    }
+  };
+
+  // Open transfer out modal
+  const openTransferOutModal = () => {
+    setTransferType('out');
+    setSelectedItemsInModal([]);
+    setTransferQuantities({});
     setShowTransferModal(true);
+  };
+
+  // Handle quantity change for specific item
+  const handleQuantityChange = (itemId: string, value: string) => {
+    setTransferQuantities(prev => ({
+      ...prev,
+      [itemId]: value
+    }));
   };
 
   // Handle product selection for transfer in
@@ -209,59 +237,83 @@ export default function StorePage() {
 
       alert('Items transferred to store successfully!');
     } else {
-      // Transfer OUT from store
-      if (!selectedItem) return;
-
-      if (quantity > selectedItem.quantity) {
-        alert('Cannot transfer more than available quantity in store');
+      // Transfer OUT from store (multi-select)
+      if (selectedItemsInModal.length === 0) {
+        alert('Please select at least one item to transfer');
         return;
       }
 
-      // Update store item
-      setStoreItems(prev => prev.map(item =>
-        item.id === selectedItem.id
-          ? {
-              ...item,
-              quantity: item.quantity - quantity,
-              lastTransfer: {
-                type: 'out',
-                quantity,
-                to: transferForm.to,
-                date: new Date().toISOString(),
-              }
-            }
-          : item
-      ).filter(item => item.quantity > 0)); // Remove items with 0 quantity
+      const selectedItems = storeItems.filter(item => selectedItemsInModal.includes(item.id));
 
-      // Update product inventory (add back to products)
-      const updatedProducts = products.map(p =>
-        p.id === selectedItem.productId
-          ? { ...p, currentStock: p.currentStock + quantity }
-          : p
-      );
+      // Validate quantities
+      for (const item of selectedItems) {
+        const quantity = parseInt(transferQuantities[item.id] || '0');
+        if (isNaN(quantity) || quantity <= 0) {
+          alert(`Please enter a valid quantity for ${item.name}`);
+          return;
+        }
+        if (quantity > item.quantity) {
+          alert(`Cannot transfer more than available quantity for ${item.name}`);
+          return;
+        }
+      }
+
+      const transferHistory = JSON.parse(localStorage.getItem('transferHistory') || '[]');
+      const updatedProducts = JSON.parse(localStorage.getItem('products') || '[]');
+
+      // Process each selected item
+      selectedItems.forEach(item => {
+        const quantity = parseInt(transferQuantities[item.id]);
+
+        // Update product inventory (add back to products)
+        const productIndex = updatedProducts.findIndex((p: any) => p.id === item.productId);
+        if (productIndex !== -1) {
+          updatedProducts[productIndex].currentStock += quantity;
+        }
+
+        // Save transfer history
+        transferHistory.push({
+          id: `TR-${Date.now()}-${Math.random()}`,
+          type: 'store-to-product',
+          productName: item.name,
+          sku: item.sku,
+          quantity,
+          from: 'Store',
+          to: 'Products Inventory',
+          date: new Date().toISOString(),
+          performedBy: 'Current User',
+        });
+      });
+
       localStorage.setItem('products', JSON.stringify(updatedProducts));
       setProducts(updatedProducts);
-
-      // Save transfer history
-      const transferHistory = JSON.parse(localStorage.getItem('transferHistory') || '[]');
-      transferHistory.push({
-        id: `TR-${Date.now()}`,
-        type: 'store-to-product',
-        productName: selectedItem.name,
-        sku: selectedItem.sku,
-        quantity,
-        from: 'Store',
-        to: 'Products Inventory',
-        date: new Date().toISOString(),
-        performedBy: 'Current User',
-      });
       localStorage.setItem('transferHistory', JSON.stringify(transferHistory));
 
-      alert('Items transferred from store successfully!');
+      // Update store items
+      setStoreItems(prev => prev.map(item => {
+        if (selectedItemsInModal.includes(item.id)) {
+          const quantity = parseInt(transferQuantities[item.id]);
+          return {
+            ...item,
+            quantity: item.quantity - quantity,
+            lastTransfer: {
+              type: 'out',
+              quantity,
+              to: 'Products Inventory',
+              date: new Date().toISOString(),
+            }
+          };
+        }
+        return item;
+      }).filter(item => item.quantity > 0)); // Remove items with 0 quantity
+
+      alert(`${selectedItemsInModal.length} item(s) transferred to Products successfully!`);
     }
 
     setShowTransferModal(false);
     setSelectedItem(null);
+    setSelectedItemsInModal([]);
+    setTransferQuantities({});
     setTransferForm({
       productId: '',
       sku: '',
@@ -298,10 +350,19 @@ export default function StorePage() {
               <h1 className="text-3xl font-bold text-gray-900">Store Management</h1>
               <p className="text-gray-500">Central location for managing inventory transfers</p>
             </div>
-            <Button onClick={handleTransferIn} className="bg-[#2D5016] hover:bg-[#1F3509]">
-              <ArrowUpFromLine className="mr-2 h-4 w-4" />
-              Transfer In
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={openTransferOutModal}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <ArrowDownToLine className="mr-2 h-4 w-4" />
+                Transfer to Products
+              </Button>
+              <Button onClick={handleTransferIn} className="bg-[#2D5016] hover:bg-[#1F3509]">
+                <ArrowUpFromLine className="mr-2 h-4 w-4" />
+                Transfer In
+              </Button>
+            </div>
           </div>
 
           {/* Search Input */}
@@ -378,12 +439,13 @@ export default function StorePage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredItems.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between border-b pb-4 last:border-0">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
-                        <Package className="h-6 w-6 text-blue-600" />
-                      </div>
+                {filteredItems.map((item) => {
+                  return (
+                    <div key={item.id} className="flex items-center justify-between border-b pb-4 last:border-0">
+                      <div className="flex items-center gap-4 flex-1">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
+                          <Package className="h-6 w-6 text-blue-600" />
+                        </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <h3 className="font-medium">{item.name}</h3>
@@ -402,25 +464,17 @@ export default function StorePage() {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="text-sm text-gray-500">Quantity</p>
-                        <p className="text-lg font-semibold">
-                          {item.quantity} {item.unit}
-                        </p>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="text-sm text-gray-500">Quantity</p>
+                          <p className="text-lg font-semibold">
+                            {item.quantity} {item.unit}
+                          </p>
+                        </div>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleTransferOut(item)}
-                        className="border-[#2D5016] text-[#2D5016] hover:bg-[#2D5016] hover:text-white"
-                      >
-                        <ArrowDownToLine className="mr-2 h-4 w-4" />
-                        Transfer to Products
-                      </Button>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
@@ -429,7 +483,7 @@ export default function StorePage() {
         {/* Transfer Modal */}
         {showTransferModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-md w-full">
+            <div className={`bg-white rounded-lg w-full max-h-[90vh] overflow-y-auto ${transferType === 'out' ? 'max-w-3xl' : 'max-w-md'}`}>
               <div className="p-6 border-b border-gray-200 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900">
                   {transferType === 'in' ? 'Transfer to Store' : 'Transfer to Products'}
@@ -439,6 +493,8 @@ export default function StorePage() {
                   onClick={() => {
                     setShowTransferModal(false);
                     setSelectedItem(null);
+                    setSelectedItemsInModal([]);
+                    setTransferQuantities({});
                   }}
                 >
                   <X className="h-4 w-4" />
@@ -447,90 +503,168 @@ export default function StorePage() {
 
               <form onSubmit={handleTransferSubmit} className="p-6 space-y-4">
                 {transferType === 'in' ? (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Product *
-                    </label>
-                    <select
-                      value={transferForm.productId}
-                      onChange={handleProductSelect}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2D5016] focus:border-transparent"
-                      required
-                    >
-                      <option value="">Select a product...</option>
-                      {products.map((product) => (
-                        <option key={product.id} value={product.id}>
-                          {product.name} ({product.sku}) - Available: {product.currentStock}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Product *
+                      </label>
+                      <select
+                        value={transferForm.productId}
+                        onChange={handleProductSelect}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2D5016] focus:border-transparent"
+                        required
+                      >
+                        <option value="">Select a product...</option>
+                        {products.map((product) => (
+                          <option key={product.id} value={product.id}>
+                            {product.name} ({product.sku}) - Available: {product.currentStock}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
                 ) : (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Product
-                    </label>
-                    <Input value={transferForm.name} disabled />
-                    <p className="text-sm text-gray-500 mt-1">
-                      Available in store: {selectedItem?.quantity} {selectedItem?.unit}
-                    </p>
-                  </div>
+                  <>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-sm text-blue-800">
+                        <strong>Select items from Store to transfer to Products Inventory</strong>
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-medium text-gray-900">Select Items to Transfer</h3>
+                        <div className="flex items-center gap-3">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selectedItemsInModal.length === filteredItems.length && filteredItems.length > 0}
+                              onChange={handleSelectAllInModal}
+                              className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                            />
+                            <span className="text-sm text-gray-700">Select All ({filteredItems.length})</span>
+                          </label>
+                          {selectedItemsInModal.length > 0 && (
+                            <span className="text-sm text-blue-600 font-medium">
+                              {selectedItemsInModal.length} selected
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="border border-gray-200 rounded-lg overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="text-left py-3 px-4 font-medium text-gray-900 w-12">Select</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-900">Product</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-900">SKU</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-900">Available in Store</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-900">Quantity to Transfer</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredItems.map((item) => {
+                              const isSelected = selectedItemsInModal.includes(item.id);
+                              return (
+                                <tr
+                                  key={item.id}
+                                  className={`border-t border-gray-100 ${isSelected ? 'bg-blue-50' : ''}`}
+                                >
+                                  <td className="py-3 px-4">
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={() => handleItemSelectInModal(item.id)}
+                                      className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                                    />
+                                  </td>
+                                  <td className="py-3 px-4 font-medium text-gray-900">{item.name}</td>
+                                  <td className="py-3 px-4 text-gray-600">{item.sku}</td>
+                                  <td className="py-3 px-4 text-gray-600">{item.quantity} {item.unit}</td>
+                                  <td className="py-3 px-4">
+                                    <Input
+                                      type="number"
+                                      value={transferQuantities[item.id] || ''}
+                                      onChange={(e) => handleQuantityChange(item.id, e.target.value)}
+                                      placeholder="0"
+                                      min="1"
+                                      max={item.quantity}
+                                      className="w-32"
+                                      disabled={!isSelected}
+                                      required={isSelected}
+                                    />
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </>
                 )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Quantity *
-                  </label>
-                  <Input
-                    type="number"
-                    value={transferForm.quantity}
-                    onChange={(e) => setTransferForm(prev => ({ ...prev, quantity: e.target.value }))}
-                    placeholder="Enter quantity"
-                    min="1"
-                    required
-                  />
-                </div>
+                {transferType === 'in' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Quantity *
+                      </label>
+                      <Input
+                        type="number"
+                        value={transferForm.quantity}
+                        onChange={(e) => setTransferForm(prev => ({ ...prev, quantity: e.target.value }))}
+                        placeholder="Enter quantity"
+                        min="1"
+                        required
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    From
-                  </label>
-                  <Input
-                    value={transferType === 'in' ? 'Products Inventory' : 'Store'}
-                    disabled
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        From
+                      </label>
+                      <Input
+                        value="Products Inventory"
+                        disabled
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    To
-                  </label>
-                  <Input
-                    value={transferType === 'in' ? 'Store' : 'Products Inventory'}
-                    disabled
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        To
+                      </label>
+                      <Input
+                        value="Store"
+                        disabled
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Notes
-                  </label>
-                  <textarea
-                    value={transferForm.notes}
-                    onChange={(e) => setTransferForm(prev => ({ ...prev, notes: e.target.value }))}
-                    placeholder="Optional transfer notes"
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2D5016] focus:border-transparent"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Notes
+                      </label>
+                      <textarea
+                        value={transferForm.notes}
+                        onChange={(e) => setTransferForm(prev => ({ ...prev, notes: e.target.value }))}
+                        placeholder="Optional transfer notes"
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2D5016] focus:border-transparent"
+                      />
+                    </div>
+                  </>
+                )}
 
                 <div className="flex space-x-3 pt-4 border-t">
                   <button
                     type="button"
-                    className="px-4 py-2 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50"
+                    className="flex-1 px-4 py-2 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50"
                     onClick={() => {
                       setShowTransferModal(false);
                       setSelectedItem(null);
+                      setSelectedItemsInModal([]);
+                      setTransferQuantities({});
                     }}
                   >
                     Cancel
@@ -540,7 +674,7 @@ export default function StorePage() {
                     className="flex-1 px-4 py-2 text-sm bg-[#2D5016] hover:bg-[#1F3509] text-white rounded inline-flex items-center justify-center"
                   >
                     <ArrowRightLeft className="mr-2 h-4 w-4" />
-                    {transferType === 'in' ? 'Transfer to Store' : 'Transfer to Products'}
+                    {transferType === 'in' ? 'Transfer to Store' : `Transfer ${selectedItemsInModal.length} Item(s) to Products`}
                   </button>
                 </div>
               </form>

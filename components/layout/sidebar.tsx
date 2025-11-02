@@ -55,78 +55,205 @@ const menuSections = [
     ],
   },
   {
-    section: 'Main',
+    section: 'Inventory Management',
     items: [
       {
-        title: 'Inventory Management',
-        href: '/inventory-management',
+        title: 'Product Category',
+        href: '/products/category',
         icon: Package,
+      },
+      {
+        title: 'All Products',
+        href: '/products/inventory',
+        icon: Package,
+      },
+      {
+        title: 'Product Request',
+        href: '/inventory-management/product-request',
+        icon: ShoppingBag,
+      },
+      {
+        title: 'Store',
+        href: '/inventory-management/store',
+        icon: Warehouse,
+      },
+      {
+        title: 'Transfer History',
+        href: '/inventory-management/transfer-history',
+        icon: ClipboardList,
+      },
+    ],
+  },
+  {
+    section: 'Procurement',
+    items: [
+      {
+        title: 'Purchase Request',
+        href: '/procurement/purchase-request',
+        icon: ShoppingCart,
+      },
+      {
+        title: 'Purchase Order',
+        href: '/procurement/purchase-order',
+        icon: ShoppingCart,
+      },
+      {
+        title: 'Goods Received Note',
+        href: '/procurement/goods-received-note',
+        icon: PackageCheck,
+      },
+      {
+        title: 'Vendor Category',
+        href: '/procurement/vendor-management/category',
+        icon: Store,
+      },
+      {
+        title: 'Vendors',
+        href: '/procurement/vendor-management/vendors',
+        icon: Store,
+      },
+    ],
+  },
+  {
+    section: 'Operations',
+    items: [
+      {
+        title: 'Filling Stations',
+        href: '/filling-stations',
+        icon: Fuel,
         subItems: [
           {
-            title: 'Product Category',
-            href: '/products/category',
-            icon: Package,
+            title: 'Monthly Operations',
+            href: '/filling-stations/monthly-operations',
+            icon: FileText,
           },
           {
-            title: 'All Products',
-            href: '/products/inventory',
-            icon: Package,
+            title: 'Station Management',
+            href: '/filling-stations/station-management',
+            icon: Building2,
           },
           {
-            title: 'Product Request',
-            href: '/inventory-management/product-request',
-            icon: ShoppingBag,
+            title: 'Daily Tank Dipping',
+            href: '/filling-stations/dipping',
+            icon: Droplet,
           },
           {
-            title: 'Store',
-            href: '/inventory-management/store',
-            icon: Warehouse,
-          },
-          {
-            title: 'Transfer History',
-            href: '/inventory-management/transfer-history',
+            title: 'Stock Reconciliation',
+            href: '/filling-stations/stock-reconciliation',
             icon: ClipboardList,
+            subItems: [
+              {
+                title: 'PMS Stock',
+                href: '/filling-stations/stock-reconciliation/pms',
+              },
+              {
+                title: 'AGO Stock',
+                href: '/filling-stations/stock-reconciliation/ago',
+              },
+              {
+                title: 'DPK Stock',
+                href: '/filling-stations/stock-reconciliation/dpk',
+              },
+            ],
+          },
+          {
+            title: 'Daily Pump Sales Entry',
+            href: '/filling-stations/daily-pump-sales',
+            icon: DollarSign,
+          },
+          {
+            title: 'Pump Sales Recording',
+            href: '/filling-stations/pump-sales',
+            icon: DollarSign,
+          },
+          {
+            title: 'Bank Lodgement',
+            href: '/filling-stations/bank-lodgement',
+            icon: Building2,
+          },
+          {
+            title: 'Product Delivery',
+            href: '/filling-stations/product-delivery',
+            icon: Truck,
+          },
+          {
+            title: 'Variance Dashboard',
+            href: '/filling-stations/variance-dashboard',
+            icon: TrendingUp,
+          },
+          {
+            title: 'Daily Sales Report',
+            href: '/filling-stations/daily-sales-report',
+            icon: FileText,
+          },
+          {
+            title: 'Monthly Summary',
+            href: '/filling-stations/monthly-summary',
+            icon: TrendingUp,
           },
         ],
       },
       {
-        title: 'Procurement',
-        href: '/procurement',
-        icon: ShoppingCart,
+        title: 'Peddler Operations',
+        href: '/operations/peddler',
+        icon: Bike,
+      },
+      {
+        title: 'Fleet Management',
+        href: '/operations/fleet',
+        icon: Truck,
         subItems: [
           {
-            title: 'Purchase',
-            href: '/procurement/purchase',
-            icon: ShoppingCart,
-            subItems: [
-              {
-                title: 'Purchase Request',
-                href: '/procurement/purchase-request',
-              },
-              {
-                title: 'Purchase Order',
-                href: '/procurement/purchase-order',
-              },
-              {
-                title: 'Goods Received Note',
-                href: '/procurement/goods-received-note',
-              },
-            ],
+            title: 'Trucks & Trips',
+            href: '/operations/fleet',
+            icon: Truck,
           },
           {
-            title: 'Vendor Management',
-            href: '/procurement/vendor-management',
-            icon: Store,
-            subItems: [
-              {
-                title: 'Vendor Category',
-                href: '/procurement/vendor-management/category',
-              },
-              {
-                title: 'Vendors',
-                href: '/procurement/vendor-management/vendors',
-              },
-            ],
+            title: 'Vehicle Types',
+            href: '/operations/fleet/vehicle-types',
+            icon: Settings,
+          },
+          {
+            title: 'Expense Categories',
+            href: '/operations/fleet/expense-categories',
+            icon: DollarSign,
+          },
+          {
+            title: 'Financial Analytics',
+            href: '/operations/fleet/financials',
+            icon: TrendingUp,
+          },
+        ],
+      },
+      {
+        title: 'LPG Operations',
+        href: '/lpg-operations',
+        icon: Flame,
+        subItems: [
+          {
+            title: 'Daily LPG Sales',
+            href: '/lpg-operations/daily-sales',
+            icon: Flame,
+          },
+          {
+            title: 'Cylinders & Accessories',
+            href: '/lpg-operations/cylinders-accessories',
+            icon: Package,
+          },
+          {
+            title: 'Product Purchase',
+            href: '/lpg-operations/product-purchase',
+            icon: Truck,
+          },
+          {
+            title: 'Expenses',
+            href: '/lpg-operations/expenses',
+            icon: FileText,
+          },
+          {
+            title: 'Monthly Reconciliation',
+            href: '/lpg-operations/reconciliation',
+            icon: TrendingUp,
           },
         ],
       },
@@ -188,38 +315,13 @@ const menuSections = [
     ],
   },
   {
-    section: 'Operations',
-    items: [
-      {
-        title: 'Filling Stations',
-        href: '/operations/filling-stations',
-        icon: Fuel,
-      },
-      {
-        title: 'Peddler Operations',
-        href: '/operations/peddler',
-        icon: Bike,
-      },
-      {
-        title: 'Fleet Management',
-        href: '/operations/fleet',
-        icon: Truck,
-      },
-      {
-        title: 'LPG Operations',
-        href: '/operations/lpg',
-        icon: Flame,
-      },
-    ],
-  },
-  {
     section: 'Finance',
     items: [
       // Finance items will be added here
     ],
   },
   {
-    section: 'Access Control',
+    section: 'Settings',
     items: [
       {
         title: 'Roles & Permissions',
@@ -240,12 +342,21 @@ export function Sidebar() {
   const { user, logout } = useAuthStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [expandedSections, setExpandedSections] = useState<string[]>(['Dashboard']);
 
   const toggleExpand = (itemHref: string) => {
     setExpandedItems(prev =>
       prev.includes(itemHref)
         ? prev.filter(h => h !== itemHref)
         : [...prev, itemHref]
+    );
+  };
+
+  const toggleSection = (sectionName: string) => {
+    setExpandedSections(prev =>
+      prev.includes(sectionName)
+        ? prev.filter(s => s !== sectionName)
+        : [...prev, sectionName]
     );
   };
 
@@ -303,19 +414,32 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
-        {menuSections.map((section, sectionIndex) => (
-          <div key={section.section} className={sectionIndex > 0 ? 'mt-6' : ''}>
-            {/* Section Header */}
-            {!isCollapsed && section.section !== 'Main' && (
-              <h3 className="px-3 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                {section.section}
-              </h3>
-            )}
-            {isCollapsed && section.items.length > 0 && sectionIndex > 0 && (
-              <div className="border-t border-gray-300 my-2"></div>
-            )}
-            {/* Section Items */}
-            <div className="space-y-1">
+        {menuSections.map((section, sectionIndex) => {
+          const isSectionExpanded = expandedSections.includes(section.section);
+
+          return (
+            <div key={section.section} className={sectionIndex > 0 ? 'mt-4' : ''}>
+              {/* Section Header - Collapsible */}
+              {!isCollapsed && section.items.length > 0 && (
+                <button
+                  onClick={() => toggleSection(section.section)}
+                  className="w-full px-3 py-2 mb-2 flex items-center justify-between text-xs font-semibold text-gray-700 uppercase tracking-wider hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  <span>{section.section}</span>
+                  {isSectionExpanded ? (
+                    <ChevronUp className="h-3 w-3" />
+                  ) : (
+                    <ChevronDown className="h-3 w-3" />
+                  )}
+                </button>
+              )}
+              {isCollapsed && section.items.length > 0 && sectionIndex > 0 && (
+                <div className="border-t border-gray-300 my-2"></div>
+              )}
+
+              {/* Section Items - Show only if expanded or sidebar is collapsed */}
+              {(isSectionExpanded || isCollapsed) && (
+                <div className="space-y-1">
               {section.items.map((item: any) => {
                 const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
                 const hasSubItems = item.subItems && item.subItems.length > 0;
@@ -437,9 +561,11 @@ export function Sidebar() {
                   </div>
                 );
               })}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </nav>
 
       {/* Logout */}

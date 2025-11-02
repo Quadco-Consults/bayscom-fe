@@ -53,6 +53,133 @@ export default function TransferHistoryPage() {
       } catch (error) {
         console.error('Failed to parse transfer history:', error);
       }
+    } else {
+      // Add sample transfer history for demo
+      const sampleHistory: TransferRecord[] = [
+        {
+          id: 'TR-1730556789123',
+          type: 'grn-to-product',
+          productName: 'LPG Gas Cylinder - 12.5kg',
+          sku: 'LPG-12.5',
+          quantity: 50,
+          from: 'GRN GRN-2024-001',
+          to: 'Products Inventory',
+          grnId: 'GRN-2024-001',
+          vendor: 'National Gas Suppliers Ltd',
+          date: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+          performedBy: 'Admin User',
+        },
+        {
+          id: 'TR-1730556789124',
+          type: 'product-to-store',
+          productName: 'Safety Gloves - Industrial',
+          sku: 'SAF-GLV-001',
+          quantity: 100,
+          from: 'Products Inventory',
+          to: 'Store',
+          date: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // 5 hours ago
+          performedBy: 'Store Manager',
+        },
+        {
+          id: 'TR-1730556789125',
+          type: 'grn-to-store',
+          productName: 'Office Stationery Pack',
+          sku: 'OFF-STAT-100',
+          quantity: 25,
+          from: 'GRN GRN-2024-002',
+          to: 'Store',
+          grnId: 'GRN-2024-002',
+          vendor: 'Stationery Wholesale Co',
+          date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+          performedBy: 'Admin User',
+        },
+        {
+          id: 'TR-1730556789126',
+          type: 'store-to-product',
+          productName: 'Safety Helmets - Hard Hat',
+          sku: 'SAF-HLM-002',
+          quantity: 15,
+          from: 'Store',
+          to: 'Products Inventory',
+          date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+          performedBy: 'Warehouse Supervisor',
+        },
+        {
+          id: 'TR-1730556789127',
+          type: 'product-to-store',
+          productName: 'Diesel Fuel - Premium',
+          sku: 'FUEL-DSL-PRM',
+          quantity: 200,
+          from: 'Products Inventory',
+          to: 'Store',
+          date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
+          performedBy: 'Fuel Manager',
+        },
+        {
+          id: 'TR-1730556789128',
+          type: 'grn-to-product',
+          productName: 'Vehicle Oil Filter',
+          sku: 'VEH-OIL-FLT-001',
+          quantity: 75,
+          from: 'GRN GRN-2024-003',
+          to: 'Products Inventory',
+          grnId: 'GRN-2024-003',
+          vendor: 'Auto Parts Express',
+          date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), // 4 days ago
+          performedBy: 'Admin User',
+        },
+        {
+          id: 'TR-1730556789129',
+          type: 'store-to-product',
+          productName: 'Fire Extinguisher - 5kg',
+          sku: 'SAF-FIRE-5KG',
+          quantity: 10,
+          from: 'Store',
+          to: 'Products Inventory',
+          date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+          performedBy: 'Safety Officer',
+        },
+        {
+          id: 'TR-1730556789130',
+          type: 'grn-to-store',
+          productName: 'Cleaning Supplies Kit',
+          sku: 'CLN-KIT-STD',
+          quantity: 30,
+          from: 'GRN GRN-2024-004',
+          to: 'Store',
+          grnId: 'GRN-2024-004',
+          vendor: 'CleanPro Suppliers',
+          date: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), // 6 days ago
+          performedBy: 'Store Manager',
+        },
+        {
+          id: 'TR-1730556789131',
+          type: 'product-to-store',
+          productName: 'Work Boots - Steel Toe',
+          sku: 'SAF-BOOT-ST',
+          quantity: 40,
+          from: 'Products Inventory',
+          to: 'Store',
+          date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
+          performedBy: 'HR Manager',
+        },
+        {
+          id: 'TR-1730556789132',
+          type: 'grn-to-product',
+          productName: 'LPG Gas Regulator',
+          sku: 'LPG-REG-001',
+          quantity: 120,
+          from: 'GRN GRN-2024-005',
+          to: 'Products Inventory',
+          grnId: 'GRN-2024-005',
+          vendor: 'National Gas Suppliers Ltd',
+          date: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(), // 8 days ago
+          performedBy: 'Admin User',
+        },
+      ];
+
+      setTransferHistory(sampleHistory);
+      localStorage.setItem('transferHistory', JSON.stringify(sampleHistory));
     }
   }, []);
 
@@ -117,7 +244,7 @@ export default function TransferHistoryPage() {
         <div className="space-y-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Transfer History</h1>
-            <p className="text-gray-500">View all inventory transfers across products, store, and goods received</p>
+            <p className="text-gray-500">Track and monitor all inventory movement between Products, Store, and Goods Received Notes</p>
           </div>
 
           {/* Search and Filter */}
@@ -127,7 +254,7 @@ export default function TransferHistoryPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Search by product, SKU, GRN, or vendor..."
+                placeholder="Search by product name, SKU, GRN ID, or vendor name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 pr-4"
@@ -168,6 +295,9 @@ export default function TransferHistoryPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalTransfers}</div>
+              {totalTransfers === 0 && (
+                <p className="text-xs text-gray-400 mt-1">No transfers yet</p>
+              )}
             </CardContent>
           </Card>
           <Card>
@@ -176,6 +306,9 @@ export default function TransferHistoryPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">{productToStore}</div>
+              {productToStore === 0 && totalTransfers > 0 && (
+                <p className="text-xs text-gray-400 mt-1">None yet</p>
+              )}
             </CardContent>
           </Card>
           <Card>
@@ -184,6 +317,9 @@ export default function TransferHistoryPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">{storeToProduct}</div>
+              {storeToProduct === 0 && totalTransfers > 0 && (
+                <p className="text-xs text-gray-400 mt-1">None yet</p>
+              )}
             </CardContent>
           </Card>
           <Card>
@@ -192,6 +328,9 @@ export default function TransferHistoryPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-purple-600">{grnTransfers}</div>
+              {grnTransfers === 0 && totalTransfers > 0 && (
+                <p className="text-xs text-gray-400 mt-1">None yet</p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -203,14 +342,29 @@ export default function TransferHistoryPage() {
           </CardHeader>
           <CardContent>
             {filteredTransfers.length === 0 ? (
-              <div className="text-center py-12">
-                <ArrowRightLeft className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">No transfer history found</p>
-                <p className="text-sm text-gray-400 mt-2">
+              <div className="text-center py-16">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+                  <ArrowRightLeft className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {searchQuery || typeFilter !== 'all' ? 'No transfers found' : 'No transfer history yet'}
+                </h3>
+                <p className="text-gray-500 max-w-md mx-auto mb-6">
                   {searchQuery || typeFilter !== 'all'
-                    ? 'Try adjusting your filters'
-                    : 'Transfer history will appear here as you move items'}
+                    ? 'No transfers match your current search or filter criteria. Try adjusting your filters to see more results.'
+                    : 'Transfer records will appear here automatically when you move items between Products, Store, and Goods Received Notes.'}
                 </p>
+                {!searchQuery && typeFilter === 'all' && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-lg mx-auto text-left">
+                    <p className="text-sm font-medium text-blue-900 mb-2">How transfers work:</p>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      <li>• Transfer items from <strong>Products</strong> to <strong>Store</strong></li>
+                      <li>• Transfer items from <strong>Store</strong> back to <strong>Products</strong></li>
+                      <li>• Transfer items from <strong>GRN</strong> to <strong>Products</strong> or <strong>Store</strong></li>
+                      <li>• All transfers are automatically tracked and displayed here</li>
+                    </ul>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="overflow-x-auto">

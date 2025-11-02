@@ -264,6 +264,17 @@ export default function PurchaseOrderPage() {
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate delivery date is in the future
+    const deliveryDate = new Date(formData.deliveryDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day
+
+    if (deliveryDate < today) {
+      alert('Delivery date must be in the future. Please select a valid date.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -445,6 +456,16 @@ export default function PurchaseOrderPage() {
   const handleConvertPRtoPO = () => {
     if (!conversionData.vendorId || !conversionData.deliveryDate) {
       alert('Please select vendor and delivery date');
+      return;
+    }
+
+    // Validate delivery date is in the future
+    const deliveryDate = new Date(conversionData.deliveryDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day
+
+    if (deliveryDate < today) {
+      alert('Delivery date must be in the future. Please select a valid date.');
       return;
     }
 
@@ -1551,7 +1572,7 @@ export default function PurchaseOrderPage() {
                     Enter the actual quantity received for each item. The system will automatically calculate shortfalls or excess.
                   </p>
 
-                  <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="border border-gray-200 rounded-lg overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead className="bg-gray-50">
                         <tr>
@@ -1559,6 +1580,8 @@ export default function PurchaseOrderPage() {
                           <th className="text-left py-3 px-4 font-medium text-gray-900">Description</th>
                           <th className="text-left py-3 px-4 font-medium text-gray-900">Ordered</th>
                           <th className="text-left py-3 px-4 font-medium text-gray-900">Received *</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Batch/Lot No</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Expiry Date</th>
                           <th className="text-left py-3 px-4 font-medium text-gray-900">Difference</th>
                         </tr>
                       </thead>
@@ -1579,6 +1602,31 @@ export default function PurchaseOrderPage() {
                                   onChange={(e) => handleReceivedQuantityChange(index, e.target.value)}
                                   className="w-24"
                                   required
+                                />
+                              </td>
+                              <td className="py-3 px-4">
+                                <Input
+                                  type="text"
+                                  value={(item as any).batchNumber || ''}
+                                  onChange={(e) => {
+                                    const newItems = [...grnFormData.items];
+                                    newItems[index] = { ...newItems[index], batchNumber: e.target.value } as any;
+                                    setGRNFormData(prev => ({ ...prev, items: newItems }));
+                                  }}
+                                  placeholder="Batch/Lot"
+                                  className="w-32"
+                                />
+                              </td>
+                              <td className="py-3 px-4">
+                                <Input
+                                  type="date"
+                                  value={(item as any).expiryDate || ''}
+                                  onChange={(e) => {
+                                    const newItems = [...grnFormData.items];
+                                    newItems[index] = { ...newItems[index], expiryDate: e.target.value } as any;
+                                    setGRNFormData(prev => ({ ...prev, items: newItems }));
+                                  }}
+                                  className="w-36"
                                 />
                               </td>
                               <td className="py-3 px-4">

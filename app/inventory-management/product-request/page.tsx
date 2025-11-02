@@ -285,6 +285,35 @@ export default function ProductRequestPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate stock availability for each requested item
+    const validItems = formData.items.filter(item => item.productId && item.quantity);
+
+    for (const item of validItems) {
+      const product = availableProducts.find(p => p.id === item.productId);
+
+      if (!product) {
+        alert(`Product "${item.productName}" not found in inventory!`);
+        return;
+      }
+
+      const requestedQty = parseInt(item.quantity);
+
+      if (isNaN(requestedQty) || requestedQty <= 0) {
+        alert(`Please enter a valid quantity for "${item.productName}"`);
+        return;
+      }
+
+      if (requestedQty > product.currentStock) {
+        alert(
+          `Insufficient stock for "${item.productName}"!\n` +
+          `Requested: ${requestedQty} ${item.unit}\n` +
+          `Available: ${product.currentStock} ${item.unit}\n\n` +
+          `Please reduce the quantity or choose a different product.`
+        );
+        return;
+      }
+    }
+
     const newRequest = {
       id: `PRQ-${Date.now()}`,
       title: formData.title,
@@ -292,7 +321,7 @@ export default function ProductRequestPage() {
       department: selectedDepartment,
       status: 'pending',
       date: new Date().toISOString().split('T')[0],
-      items: formData.items.filter(item => item.productId && item.quantity),
+      items: validItems,
       requestedBy: 'Current User', // Replace with actual user
       createdAt: new Date().toISOString(),
     };

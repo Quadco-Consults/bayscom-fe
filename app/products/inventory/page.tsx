@@ -103,7 +103,7 @@ export default function InventoryPage() {
   const [items, setItems] = useState<InventoryItem[]>(defaultProducts);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showTransferModal, setShowTransferModal] = useState(false);
-  const [selectedItemsForTransfer, setSelectedItemsForTransfer] = useState<string[]>([]);
+  const [selectedItemsInModal, setSelectedItemsInModal] = useState<string[]>([]);
   const [transferQuantities, setTransferQuantities] = useState<{[key: string]: string}>({});
 
   // Load categories from localStorage
@@ -231,9 +231,9 @@ export default function InventoryPage() {
     }
   };
 
-  // Handle checkbox toggle
-  const handleItemSelect = (itemId: string) => {
-    setSelectedItemsForTransfer(prev => {
+  // Handle checkbox toggle in modal
+  const handleItemSelectInModal = (itemId: string) => {
+    setSelectedItemsInModal(prev => {
       if (prev.includes(itemId)) {
         // Remove from selection
         const newQuantities = { ...transferQuantities };
@@ -247,24 +247,23 @@ export default function InventoryPage() {
     });
   };
 
-  // Handle select all
-  const handleSelectAll = () => {
-    if (selectedItemsForTransfer.length === filteredItems.length) {
+  // Handle select all in modal
+  const handleSelectAllInModal = () => {
+    if (selectedItemsInModal.length === filteredItems.length) {
       // Deselect all
-      setSelectedItemsForTransfer([]);
+      setSelectedItemsInModal([]);
       setTransferQuantities({});
     } else {
-      // Select all
-      setSelectedItemsForTransfer(filteredItems.map(item => item.id));
+      // Select all available items (with stock)
+      const availableItems = filteredItems.filter(item => item.currentStock > 0);
+      setSelectedItemsInModal(availableItems.map(item => item.id));
     }
   };
 
   // Open transfer modal
   const openTransferModal = () => {
-    if (selectedItemsForTransfer.length === 0) {
-      alert('Please select at least one item to transfer');
-      return;
-    }
+    setSelectedItemsInModal([]);
+    setTransferQuantities({});
     setShowTransferModal(true);
   };
 
@@ -278,8 +277,13 @@ export default function InventoryPage() {
 
   // Process transfer to store
   const processTransferToStore = () => {
+    if (selectedItemsInModal.length === 0) {
+      alert('Please select at least one item to transfer');
+      return;
+    }
+
     // Validate quantities
-    const selectedItems = items.filter(item => selectedItemsForTransfer.includes(item.id));
+    const selectedItems = items.filter(item => selectedItemsInModal.includes(item.id));
 
     for (const item of selectedItems) {
       const quantity = parseInt(transferQuantities[item.id] || '0');
@@ -352,7 +356,7 @@ export default function InventoryPage() {
 
     // Update product stock
     const updatedItems = items.map(item => {
-      if (selectedItemsForTransfer.includes(item.id)) {
+      if (selectedItemsInModal.includes(item.id)) {
         const quantity = parseInt(transferQuantities[item.id]);
         return { ...item, currentStock: item.currentStock - quantity };
       }
@@ -361,15 +365,26 @@ export default function InventoryPage() {
     setItems(updatedItems);
     localStorage.setItem('products', JSON.stringify(updatedItems));
 
-    alert(`${selectedItemsForTransfer.length} item(s) transferred to Store successfully!`);
+    alert(`${selectedItemsInModal.length} item(s) transferred to Store successfully!`);
     setShowTransferModal(false);
-    setSelectedItemsForTransfer([]);
+    setSelectedItemsInModal([]);
     setTransferQuantities({});
   };
 
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check for SKU uniqueness
+    const skuExists = items.find(item =>
+      item.sku.toLowerCase() === formData.sku.toLowerCase() &&
+      item.id !== selectedItem?.id
+    );
+
+    if (skuExists) {
+      alert(`SKU "${formData.sku}" already exists! Please use a unique SKU.`);
+      return;
+    }
 
     if (showEditModal && selectedItem) {
       // Update existing item
@@ -399,7 +414,7 @@ export default function InventoryPage() {
     } else {
       // Create new item
       const newItem: any = {
-        id: String(items.length + 1),
+        id: Date.now().toString(), // Use timestamp for unique ID
         sku: formData.sku,
         name: formData.name,
         category: formData.categoryId, // Keep for backward compatibility
@@ -484,15 +499,13 @@ export default function InventoryPage() {
               <p className="text-gray-500">Manage all products across categories and subcategories</p>
             </div>
             <div className="flex items-center gap-3">
-              {selectedItemsForTransfer.length > 0 && (
-                <Button
-                  onClick={openTransferModal}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <ArrowRightLeft className="mr-2 h-4 w-4" />
-                  Transfer to Store ({selectedItemsForTransfer.length})
-                </Button>
-              )}
+              <Button
+                onClick={openTransferModal}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <ArrowRightLeft className="mr-2 h-4 w-4" />
+                Transfer to Store
+              </Button>
               <Button onClick={handleAddItem} className="bg-[#2D5016] hover:bg-[#1F3509]">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Product
@@ -619,35 +632,16 @@ export default function InventoryPage() {
         {/* Inventory Table */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Inventory Items</CardTitle>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={selectedItemsForTransfer.length === filteredItems.length && filteredItems.length > 0}
-                  onChange={handleSelectAll}
-                  className="h-4 w-4 text-[#2D5016] focus:ring-[#2D5016] border-gray-300 rounded"
-                />
-                <span className="text-sm text-gray-600">Select All</span>
-              </div>
-            </div>
+            <CardTitle>Inventory Items</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {filteredItems.map((item) => {
                 const status = getStockStatus(item);
                 const classification = (item as any).classification || 'consumable';
-                const isSelected = selectedItemsForTransfer.includes(item.id);
                 return (
                   <div key={item.id} className="flex items-center justify-between border-b pb-4 last:border-0">
                     <div className="flex items-center gap-4 flex-1">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => handleItemSelect(item.id)}
-                        disabled={item.currentStock === 0}
-                        className="h-5 w-5 text-[#2D5016] focus:ring-[#2D5016] border-gray-300 rounded disabled:opacity-50"
-                      />
                       <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
                         <Package className="h-6 w-6 text-blue-600" />
                       </div>
@@ -1166,14 +1160,17 @@ export default function InventoryPage() {
         {/* Transfer to Store Modal */}
         {showTransferModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">Transfer to Store</h2>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Transfer to Store</h2>
+                  <p className="text-sm text-gray-500 mt-1">Select items and enter quantities to transfer</p>
+                </div>
                 <button
                   className="px-3 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50"
                   onClick={() => {
                     setShowTransferModal(false);
-                    setSelectedItemsForTransfer([]);
+                    setSelectedItemsInModal([]);
                     setTransferQuantities({});
                   }}
                 >
@@ -1182,30 +1179,55 @@ export default function InventoryPage() {
               </div>
 
               <div className="p-6 space-y-4">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-sm text-blue-800">
-                    <strong>Transferring {selectedItemsForTransfer.length} item(s) from Products Inventory to Store</strong>
-                  </p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedItemsInModal.length === filteredItems.filter(i => i.currentStock > 0).length && filteredItems.filter(i => i.currentStock > 0).length > 0}
+                      onChange={handleSelectAllInModal}
+                      className="h-4 w-4 text-[#2D5016] focus:ring-[#2D5016] border-gray-300 rounded"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Select All ({filteredItems.filter(i => i.currentStock > 0).length} items available)</span>
+                  </div>
+                  {selectedItemsInModal.length > 0 && (
+                    <span className="text-sm text-blue-600 font-medium">
+                      {selectedItemsInModal.length} item(s) selected
+                    </span>
+                  )}
                 </div>
 
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Items to Transfer</h3>
-                  <div className="border border-gray-200 rounded-lg overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Product</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">SKU</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Available</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Quantity to Transfer *</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {items.filter(item => selectedItemsForTransfer.includes(item.id)).map((item) => (
-                          <tr key={item.id} className="border-t border-gray-100">
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900 w-12">Select</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">Product</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">SKU</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">Available Stock</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900">Quantity to Transfer</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredItems.map((item) => {
+                        const isSelected = selectedItemsInModal.includes(item.id);
+                        const isDisabled = item.currentStock === 0;
+                        return (
+                          <tr key={item.id} className={`border-t border-gray-100 ${isDisabled ? 'opacity-50' : ''}`}>
+                            <td className="py-3 px-4">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => handleItemSelectInModal(item.id)}
+                                disabled={isDisabled}
+                                className="h-4 w-4 text-[#2D5016] focus:ring-[#2D5016] border-gray-300 rounded disabled:opacity-50"
+                              />
+                            </td>
                             <td className="py-3 px-4 font-medium text-gray-900">{item.name}</td>
                             <td className="py-3 px-4 text-gray-600">{item.sku}</td>
-                            <td className="py-3 px-4 text-gray-600">{item.currentStock} {item.unit}</td>
+                            <td className="py-3 px-4 text-gray-600">
+                              {item.currentStock} {item.unit}
+                              {isDisabled && <span className="ml-2 text-xs text-red-600">(Out of stock)</span>}
+                            </td>
                             <td className="py-3 px-4">
                               <Input
                                 type="number"
@@ -1215,14 +1237,14 @@ export default function InventoryPage() {
                                 min="1"
                                 max={item.currentStock}
                                 className="w-32"
-                                required
+                                disabled={!isSelected || isDisabled}
                               />
                             </td>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
 
                 <div className="flex space-x-3 pt-4 border-t">
@@ -1231,7 +1253,7 @@ export default function InventoryPage() {
                     className="flex-1 px-4 py-2 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50"
                     onClick={() => {
                       setShowTransferModal(false);
-                      setSelectedItemsForTransfer([]);
+                      setSelectedItemsInModal([]);
                       setTransferQuantities({});
                     }}
                   >
@@ -1241,9 +1263,10 @@ export default function InventoryPage() {
                     type="button"
                     onClick={processTransferToStore}
                     className="flex-1 px-4 py-2 text-sm bg-[#2D5016] hover:bg-[#1F3509] text-white rounded inline-flex items-center justify-center"
+                    disabled={selectedItemsInModal.length === 0}
                   >
                     <ArrowRightLeft className="mr-2 h-4 w-4" />
-                    Transfer {selectedItemsForTransfer.length} Item(s) to Store
+                    Transfer {selectedItemsInModal.length > 0 ? `${selectedItemsInModal.length} Item(s)` : 'Items'} to Store
                   </button>
                 </div>
               </div>

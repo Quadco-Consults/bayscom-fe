@@ -14,6 +14,8 @@ export default function GoodsReceivedNotePage() {
   const [selectedGRN, setSelectedGRN] = useState<any>(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferDestination, setTransferDestination] = useState<'products' | 'store'>('products');
+  const [selectedItemsInModal, setSelectedItemsInModal] = useState<number[]>([]);
+  const [transferQuantities, setTransferQuantities] = useState<{[key: number]: string}>({});
 
   // Load GRNs from localStorage
   useEffect(() => {
@@ -37,23 +39,91 @@ export default function GoodsReceivedNotePage() {
   const handleTransferGRN = (grn: any) => {
     setSelectedGRN(grn);
     setTransferDestination('products');
+    setSelectedItemsInModal([]);
+    setTransferQuantities({});
     setShowTransferModal(true);
+  };
+
+  // Handle checkbox toggle in modal
+  const handleItemSelectInModal = (itemIndex: number) => {
+    setSelectedItemsInModal(prev => {
+      if (prev.includes(itemIndex)) {
+        // Remove from selection
+        const newQuantities = { ...transferQuantities };
+        delete newQuantities[itemIndex];
+        setTransferQuantities(newQuantities);
+        return prev.filter(idx => idx !== itemIndex);
+      } else {
+        // Add to selection
+        return [...prev, itemIndex];
+      }
+    });
+  };
+
+  // Handle select all in modal
+  const handleSelectAllInModal = () => {
+    if (!selectedGRN) return;
+
+    if (selectedItemsInModal.length === selectedGRN.items.length) {
+      // Deselect all
+      setSelectedItemsInModal([]);
+      setTransferQuantities({});
+    } else {
+      // Select all
+      const allIndexes = selectedGRN.items.map((_: any, index: number) => index);
+      setSelectedItemsInModal(allIndexes);
+    }
+  };
+
+  // Handle quantity change for specific item
+  const handleQuantityChange = (itemIndex: number, value: string) => {
+    setTransferQuantities(prev => ({
+      ...prev,
+      [itemIndex]: value
+    }));
   };
 
   // Process transfer
   const processTransfer = () => {
     if (!selectedGRN) return;
 
+    // Validate that at least one item is selected
+    if (selectedItemsInModal.length === 0) {
+      alert('Please select at least one item to transfer');
+      return;
+    }
+
+    // Validate quantities for selected items
+    for (const itemIndex of selectedItemsInModal) {
+      const item = selectedGRN.items[itemIndex];
+      const quantity = parseInt(transferQuantities[itemIndex] || '0');
+
+      if (isNaN(quantity) || quantity <= 0) {
+        alert(`Please enter a valid quantity for ${item.name}`);
+        return;
+      }
+
+      if (quantity > item.receivedQuantity) {
+        alert(`Quantity for ${item.name} cannot exceed received quantity (${item.receivedQuantity})`);
+        return;
+      }
+    }
+
+    const selectedItems = selectedItemsInModal.map(index => ({
+      ...selectedGRN.items[index],
+      transferQuantity: parseInt(transferQuantities[index])
+    }));
+
     if (transferDestination === 'products') {
       // Transfer to Products Inventory
       const products = JSON.parse(localStorage.getItem('products') || '[]');
 
-      selectedGRN.items.forEach((item: any) => {
+      selectedItems.forEach((item: any) => {
         const existingProduct = products.find((p: any) => p.name === item.name || p.sku === item.sku);
 
         if (existingProduct) {
           // Update existing product
-          existingProduct.currentStock += item.receivedQuantity;
+          existingProduct.currentStock += item.transferQuantity;
         } else {
           // Create new product
           const newProduct = {
@@ -65,7 +135,7 @@ export default function GoodsReceivedNotePage() {
             unit: 'pieces',
             reorderLevel: 10,
             reorderQuantity: 50,
-            currentStock: item.receivedQuantity,
+            currentStock: item.transferQuantity,
             unitPrice: 0,
             supplier: selectedGRN.vendor,
             location: 'Main Warehouse',
@@ -80,13 +150,13 @@ export default function GoodsReceivedNotePage() {
 
       // Save transfer history
       const transferHistory = JSON.parse(localStorage.getItem('transferHistory') || '[]');
-      selectedGRN.items.forEach((item: any) => {
+      selectedItems.forEach((item: any) => {
         transferHistory.push({
           id: `TR-${Date.now()}-${Math.random()}`,
           type: 'grn-to-product',
           productName: item.name,
           sku: item.sku || 'N/A',
-          quantity: item.receivedQuantity,
+          quantity: item.transferQuantity,
           from: `GRN ${selectedGRN.id}`,
           to: 'Products Inventory',
           grnId: selectedGRN.id,
@@ -97,21 +167,21 @@ export default function GoodsReceivedNotePage() {
       });
       localStorage.setItem('transferHistory', JSON.stringify(transferHistory));
 
-      alert(`Items from GRN ${selectedGRN.id} transferred to Products Inventory successfully!`);
+      alert(`${selectedItemsInModal.length} item(s) from GRN ${selectedGRN.id} transferred to Products Inventory successfully!`);
 
     } else {
       // Transfer to Store
       const storeItems = JSON.parse(localStorage.getItem('storeItems') || '[]');
 
-      selectedGRN.items.forEach((item: any) => {
+      selectedItems.forEach((item: any) => {
         const existingStoreItem = storeItems.find((s: any) => s.name === item.name || s.sku === item.sku);
 
         if (existingStoreItem) {
           // Update existing store item
-          existingStoreItem.quantity += item.receivedQuantity;
+          existingStoreItem.quantity += item.transferQuantity;
           existingStoreItem.lastTransfer = {
             type: 'in',
-            quantity: item.receivedQuantity,
+            quantity: item.transferQuantity,
             from: `GRN ${selectedGRN.id}`,
             date: new Date().toISOString(),
           };
@@ -123,12 +193,12 @@ export default function GoodsReceivedNotePage() {
             sku: item.sku || `SKU-${Date.now()}`,
             name: item.name,
             category: 'General',
-            quantity: item.receivedQuantity,
+            quantity: item.transferQuantity,
             unit: 'pieces',
             location: 'Main Store',
             lastTransfer: {
               type: 'in',
-              quantity: item.receivedQuantity,
+              quantity: item.transferQuantity,
               from: `GRN ${selectedGRN.id}`,
               date: new Date().toISOString(),
             }
@@ -141,13 +211,13 @@ export default function GoodsReceivedNotePage() {
 
       // Save transfer history
       const transferHistory = JSON.parse(localStorage.getItem('transferHistory') || '[]');
-      selectedGRN.items.forEach((item: any) => {
+      selectedItems.forEach((item: any) => {
         transferHistory.push({
           id: `TR-${Date.now()}-${Math.random()}`,
           type: 'grn-to-store',
           productName: item.name,
           sku: item.sku || 'N/A',
-          quantity: item.receivedQuantity,
+          quantity: item.transferQuantity,
           from: `GRN ${selectedGRN.id}`,
           to: 'Store',
           grnId: selectedGRN.id,
@@ -158,20 +228,27 @@ export default function GoodsReceivedNotePage() {
       });
       localStorage.setItem('transferHistory', JSON.stringify(transferHistory));
 
-      alert(`Items from GRN ${selectedGRN.id} transferred to Store successfully!`);
+      alert(`${selectedItemsInModal.length} item(s) from GRN ${selectedGRN.id} transferred to Store successfully!`);
     }
 
-    // Mark GRN as transferred
-    const updatedGRNs = goodsReceivedNotes.map(grn =>
-      grn.id === selectedGRN.id
-        ? { ...grn, transferred: true, transferredTo: transferDestination, transferredDate: new Date().toISOString() }
-        : grn
-    );
-    setGoodsReceivedNotes(updatedGRNs);
-    localStorage.setItem('goodsReceivedNotes', JSON.stringify(updatedGRNs));
+    // Mark GRN as transferred (only if all items are transferred)
+    // Check if all items from GRN have been transferred
+    const allItemsTransferred = selectedItemsInModal.length === selectedGRN.items.length;
+
+    if (allItemsTransferred) {
+      const updatedGRNs = goodsReceivedNotes.map(grn =>
+        grn.id === selectedGRN.id
+          ? { ...grn, transferred: true, transferredTo: transferDestination, transferredDate: new Date().toISOString() }
+          : grn
+      );
+      setGoodsReceivedNotes(updatedGRNs);
+      localStorage.setItem('goodsReceivedNotes', JSON.stringify(updatedGRNs));
+    }
 
     setShowTransferModal(false);
     setSelectedGRN(null);
+    setSelectedItemsInModal([]);
+    setTransferQuantities({});
   };
 
   const getStatusBadge = (status: string) => {
@@ -498,14 +575,16 @@ export default function GoodsReceivedNotePage() {
         {/* Transfer Modal */}
         {showTransferModal && selectedGRN && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full">
+            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">Transfer Items</h2>
+                <h2 className="text-xl font-bold text-gray-900">Transfer Items from GRN</h2>
                 <button
                   className="px-3 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50"
                   onClick={() => {
                     setShowTransferModal(false);
                     setSelectedGRN(null);
+                    setSelectedItemsInModal([]);
+                    setTransferQuantities({});
                   }}
                 >
                   <X className="h-4 w-4" />
@@ -513,93 +592,109 @@ export default function GoodsReceivedNotePage() {
               </div>
 
               <div className="p-6 space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">GRN Information</h3>
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                    <div className="flex justify-between">
+                {/* GRN Information */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
                       <span className="text-sm font-medium text-gray-600">GRN ID:</span>
-                      <span className="text-sm text-gray-900 font-medium">{selectedGRN.id}</span>
+                      <span className="text-sm text-gray-900 font-medium ml-2">{selectedGRN.id}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div>
                       <span className="text-sm font-medium text-gray-600">Vendor:</span>
-                      <span className="text-sm text-gray-900">{selectedGRN.vendor}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm font-medium text-gray-600">Total Items:</span>
-                      <span className="text-sm text-gray-900">{selectedGRN.items.length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm font-medium text-gray-600">Total Quantity:</span>
-                      <span className="text-sm text-gray-900">
-                        {selectedGRN.items.reduce((sum: number, item: any) => sum + item.receivedQuantity, 0)} units
-                      </span>
+                      <span className="text-sm text-gray-900 ml-2">{selectedGRN.vendor}</span>
                     </div>
                   </div>
                 </div>
 
+                {/* Destination Dropdown */}
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Items to Transfer</h3>
-                  <div className="border border-gray-200 rounded-lg overflow-hidden max-h-60 overflow-y-auto">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Transfer Destination *
+                  </label>
+                  <select
+                    value={transferDestination}
+                    onChange={(e) => setTransferDestination(e.target.value as 'products' | 'store')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2D5016] focus:border-transparent"
+                  >
+                    <option value="products">Products Inventory</option>
+                    <option value="store">Store</option>
+                  </select>
+                </div>
+
+                {/* Items Selection */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium text-gray-900">Select Items to Transfer</h3>
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedItemsInModal.length === selectedGRN.items.length && selectedGRN.items.length > 0}
+                          onChange={handleSelectAllInModal}
+                          className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                        />
+                        <span className="text-sm text-gray-700">Select All ({selectedGRN.items.length})</span>
+                      </label>
+                      {selectedItemsInModal.length > 0 && (
+                        <span className="text-sm text-blue-600 font-medium">
+                          {selectedItemsInModal.length} selected
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="border border-gray-200 rounded-lg overflow-hidden">
                     <table className="w-full text-sm">
-                      <thead className="bg-gray-50 sticky top-0">
+                      <thead className="bg-gray-50">
                         <tr>
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Item</th>
-                          <th className="text-right py-3 px-4 font-medium text-gray-900">Quantity</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900 w-12">Select</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Item Name</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">SKU</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Received Qty</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Quantity to Transfer</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {selectedGRN.items.map((item: any, index: number) => (
-                          <tr key={index} className="border-t border-gray-100">
-                            <td className="py-3 px-4">{item.name}</td>
-                            <td className="py-3 px-4 text-right font-medium">{item.receivedQuantity}</td>
-                          </tr>
-                        ))}
+                        {selectedGRN.items.map((item: any, index: number) => {
+                          const isSelected = selectedItemsInModal.includes(index);
+                          return (
+                            <tr
+                              key={index}
+                              className={`border-t border-gray-100 ${isSelected ? 'bg-blue-50' : ''}`}
+                            >
+                              <td className="py-3 px-4">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => handleItemSelectInModal(index)}
+                                  className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                                />
+                              </td>
+                              <td className="py-3 px-4 font-medium text-gray-900">{item.name}</td>
+                              <td className="py-3 px-4 text-gray-600">{item.sku || 'N/A'}</td>
+                              <td className="py-3 px-4 text-gray-600">{item.receivedQuantity}</td>
+                              <td className="py-3 px-4">
+                                <Input
+                                  type="number"
+                                  value={transferQuantities[index] || ''}
+                                  onChange={(e) => handleQuantityChange(index, e.target.value)}
+                                  placeholder="0"
+                                  min="1"
+                                  max={item.receivedQuantity}
+                                  className="w-32"
+                                  disabled={!isSelected}
+                                  required={isSelected}
+                                />
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-3">
-                    Select Transfer Destination *
-                  </label>
-                  <div className="space-y-3">
-                    <label className="flex items-start p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                      <input
-                        type="radio"
-                        name="destination"
-                        value="products"
-                        checked={transferDestination === 'products'}
-                        onChange={(e) => setTransferDestination(e.target.value as 'products' | 'store')}
-                        className="mt-1 h-4 w-4 text-[#2D5016] focus:ring-[#2D5016]"
-                      />
-                      <div className="ml-3 flex-1">
-                        <div className="font-medium text-gray-900">Products Inventory</div>
-                        <div className="text-sm text-gray-500">
-                          Transfer items to the main products inventory for immediate use
-                        </div>
-                      </div>
-                    </label>
-
-                    <label className="flex items-start p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                      <input
-                        type="radio"
-                        name="destination"
-                        value="store"
-                        checked={transferDestination === 'store'}
-                        onChange={(e) => setTransferDestination(e.target.value as 'products' | 'store')}
-                        className="mt-1 h-4 w-4 text-[#2D5016] focus:ring-[#2D5016]"
-                      />
-                      <div className="ml-3 flex-1">
-                        <div className="font-medium text-gray-900">Store</div>
-                        <div className="text-sm text-gray-500">
-                          Transfer items to the store for centralized management
-                        </div>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
+                {/* Actions */}
                 <div className="flex space-x-3 pt-4 border-t">
                   <button
                     type="button"
@@ -607,6 +702,8 @@ export default function GoodsReceivedNotePage() {
                     onClick={() => {
                       setShowTransferModal(false);
                       setSelectedGRN(null);
+                      setSelectedItemsInModal([]);
+                      setTransferQuantities({});
                     }}
                   >
                     Cancel
@@ -617,7 +714,7 @@ export default function GoodsReceivedNotePage() {
                     className="flex-1 px-4 py-2 text-sm bg-[#2D5016] hover:bg-[#1F3509] text-white rounded inline-flex items-center justify-center"
                   >
                     <ArrowRightLeft className="mr-2 h-4 w-4" />
-                    Transfer to {transferDestination === 'products' ? 'Products' : 'Store'}
+                    Transfer {selectedItemsInModal.length} Item(s) to {transferDestination === 'products' ? 'Products' : 'Store'}
                   </button>
                 </div>
               </div>
