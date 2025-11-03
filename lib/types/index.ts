@@ -1,3 +1,67 @@
+// Position Management Types
+export interface Position {
+  id: string;
+  title: string;
+  departmentId: string;
+  department?: Department;
+  description: string;
+  level: 'entry' | 'junior' | 'mid' | 'senior' | 'lead' | 'manager' | 'director' | 'executive';
+  baseSalary: number;
+  allowances: PositionAllowance[];
+  totalCompensation: number;
+  benefits: string[];
+  requirements: string[];
+  status: 'active' | 'inactive';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PositionAllowance {
+  id: string;
+  name: string;
+  amount: number;
+  type: 'fixed' | 'percentage';
+  description?: string;
+}
+
+export interface EmployeeTermination {
+  id: string;
+  employeeId: string;
+  employee?: Employee;
+  terminationDate: string;
+  terminationType: 'resignation' | 'dismissal' | 'retirement' | 'contract-end' | 'redundancy' | 'mutual-agreement';
+  reason: string;
+  exitInterviewNotes?: string;
+  clearanceStatus: 'pending' | 'in-progress' | 'completed';
+  finalSettlement: number;
+  outstandingDues: number;
+  processedBy: string;
+  processor?: User;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EmployeeSuspension {
+  id: string;
+  employeeId: string;
+  employee?: Employee;
+  suspensionDate: string;
+  suspensionType: 'disciplinary' | 'investigation' | 'medical' | 'administrative' | 'performance' | 'misconduct';
+  reason: string;
+  duration: number; // in days
+  startDate: string;
+  endDate: string;
+  isPaid: boolean;
+  conditions?: string;
+  reinstatementConditions?: string;
+  notes?: string;
+  status: 'active' | 'completed' | 'lifted';
+  processedBy: string;
+  processor?: User;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // User Management Types
 export interface User {
   id: string;
@@ -9,7 +73,15 @@ export interface User {
   role?: Role;
   departmentId: string;
   department?: Department;
-  status: 'active' | 'inactive' | 'suspended';
+  positionId?: string;
+  position?: Position;
+  status: 'active' | 'inactive' | 'suspended' | 'on-leave' | 'terminated';
+  leaveStatus?: {
+    isOnLeave: boolean;
+    leaveType?: string;
+    startDate?: string;
+    endDate?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -318,6 +390,233 @@ export interface ProductSalesData {
   product: string;
   sales: number;
   revenue: number;
+}
+
+// HR Management Types
+export interface Employee {
+  id: string;
+  userId: string;
+  user?: User;
+  employeeNumber: string;
+  positionId?: string;
+  position?: Position;
+  dateOfJoining: string;
+  dateOfBirth: string;
+  gender: 'male' | 'female' | 'other';
+  maritalStatus: 'single' | 'married' | 'divorced' | 'widowed';
+  address: string;
+  city: string;
+  state: string;
+  emergencyContactName: string;
+  emergencyContactPhone: string;
+  jobTitle: string;
+  employmentType: 'full-time' | 'part-time' | 'contract' | 'intern';
+  salary: number;
+  bonuses: EmployeeBonus[];
+  bankName?: string;
+  accountNumber?: string;
+  pensionNumber?: string;
+  taxNumber?: string;
+  status: 'active' | 'on-leave' | 'suspended' | 'terminated';
+  terminationId?: string;
+  termination?: EmployeeTermination;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EmployeeBonus {
+  id: string;
+  name: string;
+  amount: number;
+  type: 'monthly' | 'quarterly' | 'annual' | 'one-time' | 'performance';
+  date?: string;
+  reason?: string;
+}
+
+export interface Attendance {
+  id: string;
+  employeeId: string;
+  employee?: Employee;
+  date: string;
+  checkIn?: string;
+  checkOut?: string;
+  status: 'present' | 'absent' | 'late' | 'half-day' | 'on-leave';
+  workHours?: number;
+  overtime?: number;
+  notes?: string;
+  location?: string;
+  verifiedBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Leave {
+  id: string;
+  employeeId: string;
+  employee?: Employee;
+  leaveType: 'annual' | 'sick' | 'maternity' | 'paternity' | 'unpaid' | 'compassionate' | 'study';
+  startDate: string;
+  endDate: string;
+  days: number;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  approvedBy?: string;
+  approver?: User;
+  approvalDate?: string;
+  rejectionReason?: string;
+  handoverNotes?: string;
+  reliefOfficerId?: string;
+  reliefOfficer?: Employee;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LeaveBalance {
+  employeeId: string;
+  employee?: Employee;
+  leaveType: string;
+  totalDays: number;
+  usedDays: number;
+  remainingDays: number;
+  year: number;
+}
+
+export interface Overtime {
+  id: string;
+  employeeId: string;
+  employee?: Employee;
+  date: string;
+  hours: number;
+  rate: number;
+  totalAmount: number;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected' | 'paid';
+  approvedBy?: string;
+  approver?: User;
+  approvalDate?: string;
+  rejectionReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PerformanceReview {
+  id: string;
+  employeeId: string;
+  employee?: Employee;
+  reviewerId: string;
+  reviewer?: User;
+  reviewPeriod: string;
+  reviewDate: string;
+  overallRating: number;
+  categories: PerformanceCategory[];
+  strengths: string;
+  areasForImprovement: string;
+  goals: string;
+  employeeComments?: string;
+  status: 'draft' | 'submitted' | 'acknowledged';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PerformanceCategory {
+  category: string;
+  rating: number;
+  comments: string;
+}
+
+export interface Recruitment {
+  id: string;
+  jobTitle: string;
+  departmentId: string;
+  department?: Department;
+  positions: number;
+  jobDescription: string;
+  requirements: string;
+  employmentType: 'full-time' | 'part-time' | 'contract' | 'intern';
+  salaryRangeMin: number;
+  salaryRangeMax: number;
+  location: string;
+  postingDate: string;
+  closingDate: string;
+  status: 'draft' | 'open' | 'closed' | 'filled';
+  applications: JobApplication[];
+  createdBy: string;
+  creator?: User;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JobApplication {
+  id: string;
+  recruitmentId: string;
+  recruitment?: Recruitment;
+  applicantName: string;
+  applicantEmail: string;
+  applicantPhone: string;
+  resumeUrl?: string;
+  coverLetter?: string;
+  status: 'applied' | 'screening' | 'interview' | 'offered' | 'hired' | 'rejected';
+  interviewDate?: string;
+  interviewNotes?: string;
+  rating?: number;
+  appliedDate: string;
+  updatedAt: string;
+}
+
+export interface Training {
+  id: string;
+  title: string;
+  description: string;
+  trainingType: 'internal' | 'external' | 'online' | 'workshop' | 'seminar';
+  trainer: string;
+  location: string;
+  startDate: string;
+  endDate: string;
+  duration: number;
+  capacity: number;
+  cost: number;
+  status: 'planned' | 'ongoing' | 'completed' | 'cancelled';
+  participants: TrainingParticipant[];
+  materials?: string;
+  createdBy: string;
+  creator?: User;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TrainingParticipant {
+  id: string;
+  trainingId: string;
+  training?: Training;
+  employeeId: string;
+  employee?: Employee;
+  status: 'registered' | 'attended' | 'absent' | 'completed';
+  score?: number;
+  certificateIssued: boolean;
+  feedback?: string;
+  registeredDate: string;
+}
+
+export interface Memo {
+  id: string;
+  title: string;
+  content: string;
+  fromEmployeeId: string;
+  fromEmployee?: Employee;
+  toEmployeeIds: string[];
+  toEmployees?: Employee[];
+  departmentId?: string;
+  department?: Department;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  category: 'general' | 'policy' | 'announcement' | 'directive' | 'meeting' | 'reminder' | 'other';
+  status: 'draft' | 'sent' | 'archived';
+  attachments?: string[];
+  dueDate?: string;
+  readBy?: string[];
+  createdBy: string;
+  creator?: User;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // API Response Types

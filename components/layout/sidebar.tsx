@@ -268,6 +268,11 @@ const menuSections = [
         icon: Users,
       },
       {
+        title: 'Positions',
+        href: '/positions',
+        icon: Briefcase,
+      },
+      {
         title: 'Departments',
         href: '/departments',
         icon: Building2,
@@ -281,11 +286,31 @@ const menuSections = [
         title: 'Leave Management',
         href: '/hr/leave',
         icon: Calendar,
+        subItems: [
+          {
+            title: 'Leave Request',
+            href: '/hr/leave?mode=my-leave',
+          },
+          {
+            title: 'Leave Manager',
+            href: '/hr/leave?mode=manager',
+          },
+        ],
       },
       {
         title: 'Overtime',
         href: '/hr/overtime',
         icon: Clock,
+        subItems: [
+          {
+            title: 'Apply for Overtime',
+            href: '/hr/overtime?mode=my-overtime',
+          },
+          {
+            title: 'Overtime Manager',
+            href: '/hr/overtime?mode=manager',
+          },
+        ],
       },
       {
         title: 'Performance',
@@ -295,29 +320,38 @@ const menuSections = [
       {
         title: 'Recruitment',
         href: '/hr/recruitment',
-        icon: Briefcase,
+        icon: UserCog,
+        subItems: [
+          {
+            title: 'Job Postings',
+            href: '/hr/recruitment?mode=postings',
+          },
+          {
+            title: 'Applications',
+            href: '/hr/recruitment?mode=applications',
+          },
+        ],
       },
       {
         title: 'Training',
         href: '/hr/training',
         icon: GraduationCap,
       },
-    ],
-  },
-  {
-    section: 'Memo',
-    items: [
       {
         title: 'Memo',
-        href: '/memo',
+        href: '/hr/memo',
         icon: Mail,
+        subItems: [
+          {
+            title: 'Create Memo',
+            href: '/hr/memo?mode=my-memos',
+          },
+          {
+            title: 'Manage Memos',
+            href: '/hr/memo?mode=manager',
+          },
+        ],
       },
-    ],
-  },
-  {
-    section: 'Finance',
-    items: [
-      // Finance items will be added here
     ],
   },
   {
