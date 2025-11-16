@@ -85,8 +85,8 @@ export default function UsersPage() {
         {/* Page Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-            <p className="text-gray-600">Manage system users and their access</p>
+            <h1 className="text-3xl font-bold text-black">User Management</h1>
+            <p className="text-black">Manage system users and their access</p>
           </div>
           {!isFormOpen && (
             <Button onClick={() => setIsFormOpen(true)}>

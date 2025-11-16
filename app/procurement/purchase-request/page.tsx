@@ -200,6 +200,60 @@ export default function PurchaseRequestPage() {
     setShowViewModal(true);
   };
 
+  // Handle approval/rejection actions
+  const handleApprovalAction = async (newStatus: 'approved' | 'rejected') => {
+    if (!selectedRequest) return;
+
+    setLoading(true);
+    try {
+      // Simulate API call for approval/rejection
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Update the request status
+      const updatedRequests = purchaseRequests.map(request =>
+        request.id === selectedRequest.id
+          ? { ...request, status: newStatus }
+          : request
+      );
+
+      setPurchaseRequests(updatedRequests);
+      setSelectedRequest({ ...selectedRequest, status: newStatus });
+
+      // Show success notification
+      alert(`Purchase Request ${newStatus === 'approved' ? 'approved' : 'rejected'} successfully!`);
+
+    } catch (error) {
+      console.error('Error updating request status:', error);
+      alert('Error updating request status. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle creating RFQ from approved Purchase Request
+  const handleCreateRFQ = () => {
+    if (!selectedRequest) return;
+
+    // Create RFQ data based on the selected Purchase Request
+    const rfqData = {
+      title: `RFQ for ${selectedRequest.title}`,
+      department: selectedRequest.department,
+      purchaseRequestId: selectedRequest.id,
+      items: selectedRequest.items || [],
+      closingDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 14 days from now
+      specifications: `RFQ generated from Purchase Request ${selectedRequest.id}`,
+    };
+
+    // Store the RFQ data in localStorage for the RFQ page to pick up
+    localStorage.setItem('createRFQFromPR', JSON.stringify(rfqData));
+
+    // Navigate to RFQ page
+    window.location.href = '/procurement/rfq?from=purchase-request';
+
+    // Close the modal
+    setShowViewModal(false);
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
@@ -209,7 +263,7 @@ export default function PurchaseRequestPage() {
       case 'rejected':
         return <XCircle className="h-4 w-4 text-red-600" />;
       default:
-        return <FileText className="h-4 w-4 text-gray-600" />;
+        return <FileText className="h-4 w-4 text-black" />;
     }
   };
 
@@ -233,8 +287,8 @@ export default function PurchaseRequestPage() {
         {/* Page Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Purchase Requests</h1>
-            <p className="text-gray-600">Manage and track all purchase requests</p>
+            <h1 className="text-3xl font-bold text-black">Purchase Requests</h1>
+            <p className="text-black">Manage and track all purchase requests</p>
           </div>
           <button
             className="bg-[#2D5016] hover:bg-[#1F3509] text-white px-4 py-2 rounded-md inline-flex items-center text-sm font-medium"
@@ -250,9 +304,9 @@ export default function PurchaseRequestPage() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">Create New Purchase Request</h2>
+                <h2 className="text-xl font-bold text-black">Create New Purchase Request</h2>
                 <button
-                  className="px-3 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50"
+                  className="px-3 py-1 text-sm border border-gray-300 rounded bg-white text-black hover:bg-gray-50"
                   onClick={() => setShowCreateForm(false)}
                 >
                   <X className="h-4 w-4" />
@@ -263,7 +317,7 @@ export default function PurchaseRequestPage() {
                 {/* Basic Information */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-black mb-2">
                       Request Title *
                     </label>
                     <Input
@@ -274,13 +328,13 @@ export default function PurchaseRequestPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-black mb-2">
                       Department *
                     </label>
                     <div className="relative">
                       <button
                         type="button"
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50 flex items-center justify-between"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded bg-white text-black hover:bg-gray-50 flex items-center justify-between"
                         onClick={() => setShowDepartmentDropdown(!showDepartmentDropdown)}
                       >
                         {selectedDepartment || 'Select department'}
@@ -305,7 +359,7 @@ export default function PurchaseRequestPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-black mb-2">
                     Description
                   </label>
                   <textarea
@@ -320,8 +374,8 @@ export default function PurchaseRequestPage() {
                 {/* Items Section */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Request Items</h3>
-                    <button type="button" onClick={addItem} className="px-3 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50 inline-flex items-center">
+                    <h3 className="text-lg font-medium text-black">Request Items</h3>
+                    <button type="button" onClick={addItem} className="px-3 py-1 text-sm border border-gray-300 rounded bg-white text-black hover:bg-gray-50 inline-flex items-center">
                       <Plus className="h-4 w-4 mr-2" />
                       Add Item
                     </button>
@@ -331,7 +385,7 @@ export default function PurchaseRequestPage() {
                     {formData.items.map((item, index) => (
                       <div key={index} className="border border-gray-200 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-3">
-                          <h4 className="text-sm font-medium text-gray-700">Item {index + 1}</h4>
+                          <h4 className="text-sm font-medium text-black">Item {index + 1}</h4>
                           {formData.items.length > 1 && (
                             <button
                               type="button"
@@ -345,7 +399,7 @@ export default function PurchaseRequestPage() {
 
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                           <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                            <label className="block text-xs font-medium text-black mb-1">
                               Item Name *
                             </label>
                             <Input
@@ -356,7 +410,7 @@ export default function PurchaseRequestPage() {
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                            <label className="block text-xs font-medium text-black mb-1">
                               Quantity *
                             </label>
                             <Input
@@ -369,7 +423,7 @@ export default function PurchaseRequestPage() {
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                            <label className="block text-xs font-medium text-black mb-1">
                               Unit Price (₦) *
                             </label>
                             <Input
@@ -383,7 +437,7 @@ export default function PurchaseRequestPage() {
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                            <label className="block text-xs font-medium text-black mb-1">
                               Total
                             </label>
                             <Input
@@ -395,7 +449,7 @@ export default function PurchaseRequestPage() {
                         </div>
 
                         <div className="mt-3">
-                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                          <label className="block text-xs font-medium text-black mb-1">
                             Description
                           </label>
                           <textarea
@@ -413,7 +467,7 @@ export default function PurchaseRequestPage() {
                   {/* Total Amount */}
                   <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                     <div className="flex justify-between items-center">
-                      <span className="text-lg font-medium text-gray-900">Total Amount:</span>
+                      <span className="text-lg font-medium text-black">Total Amount:</span>
                       <span className="text-xl font-bold text-[#2D5016]">
                         ₦{calculateTotal().toLocaleString()}
                       </span>
@@ -425,7 +479,7 @@ export default function PurchaseRequestPage() {
                 <div className="flex space-x-3 pt-4 border-t">
                   <button
                     type="button"
-                    className="px-4 py-2 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                    className="px-4 py-2 text-sm border border-gray-300 rounded bg-white text-black hover:bg-gray-50 disabled:opacity-50"
                     onClick={() => setShowCreateForm(false)}
                     disabled={loading}
                   >
@@ -449,9 +503,9 @@ export default function PurchaseRequestPage() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">Purchase Request Details</h2>
+                <h2 className="text-xl font-bold text-black">Purchase Request Details</h2>
                 <button
-                  className="px-3 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50"
+                  className="px-3 py-1 text-sm border border-gray-300 rounded bg-white text-black hover:bg-gray-50"
                   onClick={() => setShowViewModal(false)}
                 >
                   <X className="h-4 w-4" />
@@ -462,32 +516,32 @@ export default function PurchaseRequestPage() {
                 {/* Request Information */}
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Request Information</h3>
+                    <h3 className="text-lg font-medium text-black mb-4">Request Information</h3>
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-600">Request ID</label>
-                        <p className="text-sm text-gray-900 font-medium">{selectedRequest.id}</p>
+                        <label className="block text-sm font-medium text-black">Request ID</label>
+                        <p className="text-sm text-black font-medium">{selectedRequest.id}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-600">Title</label>
-                        <p className="text-sm text-gray-900">{selectedRequest.title}</p>
+                        <label className="block text-sm font-medium text-black">Title</label>
+                        <p className="text-sm text-black">{selectedRequest.title}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-600">Department</label>
-                        <p className="text-sm text-gray-900">{selectedRequest.department}</p>
+                        <label className="block text-sm font-medium text-black">Department</label>
+                        <p className="text-sm text-black">{selectedRequest.department}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-600">Date Requested</label>
-                        <p className="text-sm text-gray-900">{selectedRequest.date}</p>
+                        <label className="block text-sm font-medium text-black">Date Requested</label>
+                        <p className="text-sm text-black">{selectedRequest.date}</p>
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Status & Amount</h3>
+                    <h3 className="text-lg font-medium text-black mb-4">Status & Amount</h3>
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-600">Status</label>
+                        <label className="block text-sm font-medium text-black">Status</label>
                         <div className="flex items-center space-x-2 mt-1">
                           {getStatusIcon(selectedRequest.status)}
                           <span className={getStatusBadge(selectedRequest.status)}>
@@ -496,12 +550,12 @@ export default function PurchaseRequestPage() {
                         </div>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-600">Total Amount</label>
+                        <label className="block text-sm font-medium text-black">Total Amount</label>
                         <p className="text-lg font-bold text-[#2D5016]">{selectedRequest.amount}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-600">Number of Items</label>
-                        <p className="text-sm text-gray-900">{selectedRequest.items} items</p>
+                        <label className="block text-sm font-medium text-black">Number of Items</label>
+                        <p className="text-sm text-black">{selectedRequest.items} items</p>
                       </div>
                     </div>
                   </div>
@@ -509,15 +563,15 @@ export default function PurchaseRequestPage() {
 
                 {/* Mock Items Section */}
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Requested Items</h3>
+                  <h3 className="text-lg font-medium text-black mb-4">Requested Items</h3>
                   <div className="border border-gray-200 rounded-lg overflow-hidden">
                     <table className="w-full text-sm">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Item</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Quantity</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Unit Price</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-900">Total</th>
+                          <th className="text-left py-3 px-4 font-medium text-black">Item</th>
+                          <th className="text-left py-3 px-4 font-medium text-black">Quantity</th>
+                          <th className="text-left py-3 px-4 font-medium text-black">Unit Price</th>
+                          <th className="text-left py-3 px-4 font-medium text-black">Total</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -596,20 +650,36 @@ export default function PurchaseRequestPage() {
                 {/* Actions */}
                 <div className="flex space-x-3 pt-4 border-t">
                   <button
-                    className="px-4 py-2 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50"
+                    className="px-4 py-2 text-sm border border-gray-300 rounded bg-white text-black hover:bg-gray-50"
                     onClick={() => setShowViewModal(false)}
                   >
                     Close
                   </button>
                   {selectedRequest.status === 'pending' && (
                     <>
-                      <button className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded">
-                        Approve
+                      <button
+                        onClick={() => handleApprovalAction('approved')}
+                        className="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded disabled:opacity-50"
+                        disabled={loading}
+                      >
+                        {loading ? 'Approving...' : 'Approve'}
                       </button>
-                      <button className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded">
-                        Reject
+                      <button
+                        onClick={() => handleApprovalAction('rejected')}
+                        className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded disabled:opacity-50"
+                        disabled={loading}
+                      >
+                        {loading ? 'Rejecting...' : 'Reject'}
                       </button>
                     </>
+                  )}
+                  {selectedRequest.status === 'approved' && (
+                    <button
+                      onClick={() => handleCreateRFQ()}
+                      className="px-4 py-2 text-sm bg-[#8B1538] hover:bg-[#7A1230] text-white rounded"
+                    >
+                      Create RFQ
+                    </button>
                   )}
                   <button className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded">
                     Print
@@ -629,8 +699,8 @@ export default function PurchaseRequestPage() {
                   <Clock className="h-6 w-6 text-yellow-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Pending</p>
-                  <p className="text-2xl font-bold text-gray-900">12</p>
+                  <p className="text-sm font-medium text-black">Pending</p>
+                  <p className="text-2xl font-bold text-black">12</p>
                 </div>
               </div>
             </CardContent>
@@ -643,8 +713,8 @@ export default function PurchaseRequestPage() {
                   <CheckCircle className="h-6 w-6 text-green-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Approved</p>
-                  <p className="text-2xl font-bold text-gray-900">28</p>
+                  <p className="text-sm font-medium text-black">Approved</p>
+                  <p className="text-2xl font-bold text-black">28</p>
                 </div>
               </div>
             </CardContent>
@@ -657,8 +727,8 @@ export default function PurchaseRequestPage() {
                   <XCircle className="h-6 w-6 text-red-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Rejected</p>
-                  <p className="text-2xl font-bold text-gray-900">3</p>
+                  <p className="text-sm font-medium text-black">Rejected</p>
+                  <p className="text-2xl font-bold text-black">3</p>
                 </div>
               </div>
             </CardContent>
@@ -671,8 +741,8 @@ export default function PurchaseRequestPage() {
                   <FileText className="h-6 w-6 text-blue-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total</p>
-                  <p className="text-2xl font-bold text-gray-900">43</p>
+                  <p className="text-sm font-medium text-black">Total</p>
+                  <p className="text-2xl font-bold text-black">43</p>
                 </div>
               </div>
             </CardContent>
@@ -689,14 +759,14 @@ export default function PurchaseRequestPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Request ID</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Title</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Department</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Amount</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Items</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Date</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Status</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Actions</th>
+                    <th className="text-left py-3 px-4 font-medium text-black">Request ID</th>
+                    <th className="text-left py-3 px-4 font-medium text-black">Title</th>
+                    <th className="text-left py-3 px-4 font-medium text-black">Department</th>
+                    <th className="text-left py-3 px-4 font-medium text-black">Amount</th>
+                    <th className="text-left py-3 px-4 font-medium text-black">Items</th>
+                    <th className="text-left py-3 px-4 font-medium text-black">Date</th>
+                    <th className="text-left py-3 px-4 font-medium text-black">Status</th>
+                    <th className="text-left py-3 px-4 font-medium text-black">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -705,14 +775,14 @@ export default function PurchaseRequestPage() {
                       <td className="py-3 px-4">
                         <div className="flex items-center">
                           {getStatusIcon(request.status)}
-                          <span className="ml-2 font-medium text-gray-900">{request.id}</span>
+                          <span className="ml-2 font-medium text-black">{request.id}</span>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-gray-900">{request.title}</td>
-                      <td className="py-3 px-4 text-gray-600">{request.department}</td>
-                      <td className="py-3 px-4 font-medium text-gray-900">{request.amount}</td>
-                      <td className="py-3 px-4 text-gray-600">{request.items} items</td>
-                      <td className="py-3 px-4 text-gray-600">{request.date}</td>
+                      <td className="py-3 px-4 text-black">{request.title}</td>
+                      <td className="py-3 px-4 text-black">{request.department}</td>
+                      <td className="py-3 px-4 font-medium text-black">{request.amount}</td>
+                      <td className="py-3 px-4 text-black">{request.items} items</td>
+                      <td className="py-3 px-4 text-black">{request.date}</td>
                       <td className="py-3 px-4">
                         <span className={getStatusBadge(request.status)}>
                           {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
@@ -721,13 +791,13 @@ export default function PurchaseRequestPage() {
                       <td className="py-3 px-4">
                         <div className="flex space-x-2">
                           <button
-                            className="px-3 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50"
+                            className="px-3 py-1 text-sm border border-gray-300 rounded bg-white text-black hover:bg-gray-50"
                             onClick={() => handleViewRequest(request)}
                           >
                             View
                           </button>
                           {request.status === 'pending' && (
-                            <button className="px-3 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50">
+                            <button className="px-3 py-1 text-sm border border-gray-300 rounded bg-white text-black hover:bg-gray-50">
                               Edit
                             </button>
                           )}

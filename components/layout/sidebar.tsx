@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 import {
   LayoutDashboard,
   Users,
@@ -14,26 +15,29 @@ import {
   Settings,
   LogOut,
   ShoppingCart,
-  UserCog,
   Wrench,
   DollarSign,
   FileText,
   ClipboardList,
   Store,
-  UserCheck,
-  Calendar,
-  Clock,
   TrendingUp,
-  Briefcase,
-  GraduationCap,
   Archive,
-  Boxes,
   ShoppingBag,
   PackageCheck,
   Warehouse,
-  Mail,
   Bike,
   Flame,
+  BarChart3,
+  Target,
+  Code,
+  ChevronDown,
+  ChevronRight,
+  CalendarDays,
+  PieChart,
+  Activity,
+  CreditCard,
+  MoveDiagonal,
+  Calculator,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuthStore } from '@/lib/stores/authStore';
@@ -50,37 +54,241 @@ const menuSections = [
     ],
   },
   {
-    section: 'Procurement',
+    section: 'Finance',
+    collapsible: true,
     items: [
       {
-        title: 'Purchase Request',
-        href: '/procurement/purchase-request',
+        title: 'General Ledger',
+        href: '/finance/general-ledger',
         icon: FileText,
       },
       {
-        title: 'Purchase Order',
-        href: '/procurement/purchase-order',
-        icon: ClipboardList,
+        title: 'Accounts Payable',
+        href: '/finance/accounts-payable',
+        icon: CreditCard,
       },
       {
-        title: 'Vendor Database',
-        href: '/procurement/vendors',
-        icon: Store,
+        title: 'Accounts Receivable',
+        href: '/finance/accounts-receivable',
+        icon: DollarSign,
       },
       {
-        title: 'LPG Accessories',
-        href: '/inventory',
-        icon: Package,
+        title: 'Cash Flow',
+        href: '/finance/cash-flow',
+        icon: TrendingUp,
       },
       {
-        title: 'Lubricants',
-        href: '/lubricants',
-        icon: Droplet,
+        title: 'Budget Management',
+        href: '/finance/budget-management',
+        icon: Calculator,
+      },
+      {
+        title: 'Financial Reports',
+        href: '/finance/reports',
+        icon: BarChart3,
       },
     ],
   },
   {
-    section: 'Admin and HR',
+    section: 'Inventory',
+    collapsible: true,
+    items: [
+      {
+        title: 'Overview',
+        href: '/inventory/overview',
+        icon: Package,
+      },
+      {
+        title: 'Stock Movements',
+        href: '/inventory/movements',
+        icon: MoveDiagonal,
+      },
+      {
+        title: 'Purchase Orders',
+        href: '/inventory/purchase-orders',
+        icon: ShoppingCart,
+      },
+      {
+        title: 'Adjustments',
+        href: '/inventory/adjustments',
+        icon: Archive,
+      },
+    ],
+  },
+  {
+    section: 'Customers',
+    collapsible: true,
+    items: [
+      {
+        title: 'Customer Management',
+        href: '/customers/overview',
+        icon: Users,
+      },
+      {
+        title: 'Sales Orders',
+        href: '/customers/sales-orders',
+        icon: ShoppingBag,
+      },
+      {
+        title: 'Analytics',
+        href: '/customers/analytics',
+        icon: PieChart,
+      },
+    ],
+  },
+  {
+    section: 'Human Resources',
+    collapsible: true,
+    items: [
+      {
+        title: 'Employees',
+        href: '/hr/employees',
+        icon: Users,
+      },
+      {
+        title: 'Payroll',
+        href: '/hr/payroll',
+        icon: Calculator,
+      },
+      {
+        title: 'Leave Management',
+        href: '/hr/leave-management',
+        icon: CalendarDays,
+      },
+    ],
+  },
+  {
+    section: 'Operations',
+    collapsible: true,
+    items: [
+      {
+        title: 'Fleet Management',
+        href: '/trucks',
+        icon: Truck,
+      },
+      {
+        title: 'Filling Stations',
+        href: '/filling-stations',
+        icon: Fuel,
+      },
+      {
+        title: 'LPG Operations',
+        href: '/lpg-operations',
+        icon: Flame,
+      },
+      {
+        title: 'Trading Operations',
+        href: '/trading-operations',
+        icon: DollarSign,
+      },
+      {
+        title: 'Peddling Operations',
+        href: '/peddling-operations',
+        icon: Bike,
+      },
+    ],
+  },
+  {
+    section: 'Admin',
+    collapsible: true,
+    items: [
+      {
+        title: 'Stores Management',
+        href: '/admin/stores',
+        icon: Warehouse,
+      },
+      {
+        title: 'Consumables',
+        href: '/admin/consumables',
+        icon: Package,
+      },
+      {
+        title: 'Assets',
+        href: '/admin/assets',
+        icon: Archive,
+      },
+      {
+        title: 'Item Requisitions',
+        href: '/admin/item-requisitions',
+        icon: ShoppingBag,
+      },
+      {
+        title: 'Asset Requests',
+        href: '/admin/asset-requests',
+        icon: PackageCheck,
+      },
+      {
+        title: 'Asset Movements',
+        href: '/admin/asset-movements',
+        icon: TrendingUp,
+      },
+      {
+        title: 'Maintenance Requests',
+        href: '/admin/maintenance-requests',
+        icon: Wrench,
+      },
+      {
+        title: 'Fuel Requests',
+        href: '/admin/fuel-requests',
+        icon: Fuel,
+      },
+      {
+        title: 'Vehicle Maintenance',
+        href: '/admin/vehicle-maintenance',
+        icon: Truck,
+      },
+    ],
+  },
+  {
+    section: 'Procurement',
+    collapsible: true,
+    items: [
+      {
+        title: 'Purchase Requests',
+        href: '/procurement/purchase-request',
+        icon: FileText,
+      },
+      {
+        title: 'RFQ (Request for Quote)',
+        href: '/procurement/rfq',
+        icon: ClipboardList,
+      },
+      {
+        title: 'Purchase Orders',
+        href: '/procurement/purchase-order',
+        icon: ShoppingCart,
+      },
+      {
+        title: 'Vendor Management',
+        href: '/procurement/vendors',
+        icon: Store,
+      },
+    ],
+  },
+  {
+    section: 'Reports',
+    collapsible: true,
+    items: [
+      {
+        title: 'Business Intelligence',
+        href: '/reports/dashboard',
+        icon: BarChart3,
+      },
+      {
+        title: 'Financial Reports',
+        href: '/reports/financial',
+        icon: FileText,
+      },
+      {
+        title: 'Operational Reports',
+        href: '/reports/operations',
+        icon: Activity,
+      },
+    ],
+  },
+  {
+    section: 'System',
+    collapsible: true,
     items: [
       {
         title: 'Users',
@@ -93,117 +301,6 @@ const menuSections = [
         icon: Building2,
       },
       {
-        title: 'Attendance',
-        href: '/hr/attendance',
-        icon: UserCheck,
-      },
-      {
-        title: 'Leave Management',
-        href: '/hr/leave',
-        icon: Calendar,
-      },
-      {
-        title: 'Overtime',
-        href: '/hr/overtime',
-        icon: Clock,
-      },
-      {
-        title: 'Performance',
-        href: '/hr/performance',
-        icon: TrendingUp,
-      },
-      {
-        title: 'Recruitment',
-        href: '/hr/recruitment',
-        icon: Briefcase,
-      },
-      {
-        title: 'Training',
-        href: '/hr/training',
-        icon: GraduationCap,
-      },
-    ],
-  },
-  {
-    section: 'Inventory Management',
-    items: [
-      {
-        title: 'Consumables',
-        href: '/inventory-management/consumables',
-        icon: Boxes,
-      },
-      {
-        title: 'Assets',
-        href: '/inventory-management/assets',
-        icon: Archive,
-      },
-      {
-        title: 'Item Request',
-        href: '/inventory-management/item-request',
-        icon: ShoppingBag,
-      },
-      {
-        title: 'Asset Request',
-        href: '/inventory-management/asset-request',
-        icon: PackageCheck,
-      },
-      {
-        title: 'Goods Receipt Note',
-        href: '/inventory-management/goods-receipt',
-        icon: ClipboardList,
-      },
-      {
-        title: 'Store',
-        href: '/inventory-management/store',
-        icon: Warehouse,
-      },
-    ],
-  },
-  {
-    section: 'Memo',
-    items: [
-      {
-        title: 'Memo',
-        href: '/memo',
-        icon: Mail,
-      },
-    ],
-  },
-  {
-    section: 'Operations',
-    items: [
-      {
-        title: 'Filling Stations',
-        href: '/operations/filling-stations',
-        icon: Fuel,
-      },
-      {
-        title: 'Peddler Operations',
-        href: '/operations/peddler',
-        icon: Bike,
-      },
-      {
-        title: 'Fleet Management',
-        href: '/operations/fleet',
-        icon: Truck,
-      },
-      {
-        title: 'LPG Operations',
-        href: '/operations/lpg',
-        icon: Flame,
-      },
-    ],
-  },
-  {
-    section: 'Finance',
-    items: [
-      // Finance items will be added here
-    ],
-  },
-  {
-    section: 'Access Control',
-    items: [
-      {
         title: 'Roles & Permissions',
         href: '/roles',
         icon: Shield,
@@ -213,6 +310,11 @@ const menuSections = [
         href: '/settings',
         icon: Settings,
       },
+      {
+        title: 'API Testing',
+        href: '/api-test',
+        icon: Code,
+      },
     ],
   },
 ];
@@ -220,6 +322,23 @@ const menuSections = [
 export function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
+  const [expandedSections, setExpandedSections] = useState<string[]>(() => {
+    // Auto-expand the section that contains the current path
+    const activeSection = menuSections.find(section =>
+      section.items?.some(item => pathname === item.href || pathname?.startsWith(item.href + '/'))
+    );
+    return activeSection ? [activeSection.section] : [];
+  });
+
+  const toggleSection = (sectionName: string) => {
+    setExpandedSections(prev =>
+      prev.includes(sectionName)
+        ? prev.filter(name => name !== sectionName)
+        : [...prev, sectionName]
+    );
+  };
+
+  const isSectionExpanded = (sectionName: string) => expandedSections.includes(sectionName);
 
   return (
     <div className="flex h-full w-64 flex-col border-r bg-gray-50">
@@ -242,7 +361,7 @@ export function Sidebar() {
             <p className="text-sm font-medium text-gray-900 truncate">
               {user?.firstName} {user?.lastName}
             </p>
-            <p className="text-xs text-gray-500 truncate">{user?.role?.name}</p>
+            <p className="text-xs text-gray-600 truncate">{user?.role?.name}</p>
           </div>
         </div>
       </div>
@@ -252,30 +371,47 @@ export function Sidebar() {
         {menuSections.map((section, sectionIndex) => (
           <div key={section.section} className={sectionIndex > 0 ? 'mt-6' : ''}>
             {/* Section Header */}
-            <h3 className="px-3 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              {section.section}
-            </h3>
+            {section.collapsible ? (
+              <button
+                onClick={() => toggleSection(section.section)}
+                className="w-full flex items-center justify-between px-3 mb-2 text-xs font-semibold text-gray-700 uppercase tracking-wider hover:text-gray-900 transition-colors"
+              >
+                <span>{section.section}</span>
+                {isSectionExpanded(section.section) ? (
+                  <ChevronDown className="h-3 w-3" />
+                ) : (
+                  <ChevronRight className="h-3 w-3" />
+                )}
+              </button>
+            ) : (
+              <h3 className="px-3 mb-2 text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                {section.section}
+              </h3>
+            )}
+
             {/* Section Items */}
-            <div className="space-y-1">
-              {section.items.map((item) => {
-                const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      'flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                      isActive
-                        ? 'bg-[#8B1538] text-white'
-                        : 'text-gray-700 hover:bg-gray-200'
-                    )}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    <span>{item.title}</span>
-                  </Link>
-                );
-              })}
-            </div>
+            {(!section.collapsible || isSectionExpanded(section.section)) && (
+              <div className="space-y-1">
+                {section.items.map((item) => {
+                  const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        'flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                        isActive
+                          ? 'bg-[#8B1538] text-white'
+                          : 'text-gray-700 hover:bg-gray-200 hover:text-gray-900'
+                      )}
+                    >
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.title}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </div>
         ))}
       </nav>
@@ -284,7 +420,7 @@ export function Sidebar() {
       <div className="border-t p-3">
         <button
           onClick={logout}
-          className="flex w-full items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
+          className="flex w-full items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 hover:text-gray-900"
         >
           <LogOut className="h-5 w-5" />
           <span>Logout</span>

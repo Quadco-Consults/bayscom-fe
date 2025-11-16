@@ -65,8 +65,8 @@ export default function DepartmentsPage() {
         {/* Page Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Departments</h1>
-            <p className="text-gray-600">Manage organizational departments</p>
+            <h1 className="text-3xl font-bold text-black">Departments</h1>
+            <p className="text-black">Manage organizational departments</p>
           </div>
           <Button>
             <Plus className="mr-2 h-4 w-4" />
@@ -82,7 +82,7 @@ export default function DepartmentsPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <CardTitle>{dept.name}</CardTitle>
-                    <p className="text-sm text-gray-600 mt-1">{dept.description}</p>
+                    <p className="text-sm text-black mt-1">{dept.description}</p>
                   </div>
                   <div className="flex space-x-1">
                     <Button variant="ghost" size="icon">
@@ -95,14 +95,14 @@ export default function DepartmentsPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center text-sm text-gray-600">
+                <div className="flex items-center text-sm text-black">
                   <Users className="mr-2 h-4 w-4" />
                   <span>{dept.employeeCount} Employees</span>
                 </div>
                 {dept.manager && (
                   <div className="mt-3 pt-3 border-t">
-                    <p className="text-xs text-gray-600">Manager</p>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-xs text-black">Manager</p>
+                    <p className="text-sm font-medium text-black">
                       {dept.manager.firstName} {dept.manager.lastName}
                     </p>
                   </div>
@@ -120,18 +120,18 @@ export default function DepartmentsPage() {
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Total Departments</span>
-                <span className="text-2xl font-bold text-gray-900">{departments.length}</span>
+                <span className="text-sm font-medium text-black">Total Departments</span>
+                <span className="text-2xl font-bold text-black">{departments.length}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Total Employees</span>
-                <span className="text-2xl font-bold text-gray-900">
+                <span className="text-sm font-medium text-black">Total Employees</span>
+                <span className="text-2xl font-bold text-black">
                   {departments.reduce((acc, dept) => acc + dept.employeeCount, 0)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Average Team Size</span>
-                <span className="text-2xl font-bold text-gray-900">
+                <span className="text-sm font-medium text-black">Average Team Size</span>
+                <span className="text-2xl font-bold text-black">
                   {Math.round(departments.reduce((acc, dept) => acc + dept.employeeCount, 0) / departments.length)}
                 </span>
               </div>

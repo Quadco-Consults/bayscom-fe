@@ -23,8 +23,8 @@ export default function DashboardPage() {
       <div className="space-y-6">
         {/* Page Header */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Welcome to Bayscom Energy ERP System</p>
+          <h1 className="text-3xl font-bold text-black">Dashboard</h1>
+          <p className="text-black">Welcome to Bayscom Energy ERP System</p>
         </div>
 
         {/* Stats Grid */}
@@ -70,10 +70,10 @@ export default function DashboardPage() {
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Sale #{1000 + i}</p>
-                      <p className="text-xs text-gray-600">2 hours ago</p>
+                      <p className="text-sm font-medium text-black">Sale #{1000 + i}</p>
+                      <p className="text-xs text-black">2 hours ago</p>
                     </div>
-                    <p className="text-sm font-medium text-gray-900">₦{(Math.random() * 50000 + 10000).toFixed(2)}</p>
+                    <p className="text-sm font-medium text-black">₦{(Math.random() * 50000 + 10000).toFixed(2)}</p>
                   </div>
                 ))}
               </div>
@@ -89,8 +89,8 @@ export default function DashboardPage() {
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Truck {i + 1} - AGO</p>
-                      <p className="text-xs text-gray-600">Lagos to Port Harcourt</p>
+                      <p className="text-sm font-medium text-black">Truck {i + 1} - AGO</p>
+                      <p className="text-xs text-black">Lagos to Port Harcourt</p>
                     </div>
                     <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
                       In Transit
@@ -112,20 +112,20 @@ export default function DashboardPage() {
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="rounded-lg border border-gray-200 p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-medium text-gray-900">Station {i + 1}</h3>
+                    <h3 className="font-medium text-black">Station {i + 1}</h3>
                     <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
                       Active
                     </span>
                   </div>
-                  <p className="text-xs text-gray-600">Lagos, Nigeria</p>
+                  <p className="text-xs text-black">Lagos, Nigeria</p>
                   <div className="mt-3 space-y-1">
-                    <div className="flex justify-between text-xs text-gray-700">
+                    <div className="flex justify-between text-xs text-black">
                       <span>PMS Tank:</span>
-                      <span className="font-medium text-gray-900">{Math.floor(Math.random() * 30 + 70)}%</span>
+                      <span className="font-medium text-black">{Math.floor(Math.random() * 30 + 70)}%</span>
                     </div>
-                    <div className="flex justify-between text-xs text-gray-700">
+                    <div className="flex justify-between text-xs text-black">
                       <span>AGO Tank:</span>
-                      <span className="font-medium text-gray-900">{Math.floor(Math.random() * 30 + 70)}%</span>
+                      <span className="font-medium text-black">{Math.floor(Math.random() * 30 + 70)}%</span>
                     </div>
                   </div>
                 </div>

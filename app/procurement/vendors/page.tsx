@@ -103,8 +103,8 @@ export default function VendorsPage() {
         {/* Page Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Vendors</h1>
-            <p className="text-gray-600">Manage your supplier relationships</p>
+            <h1 className="text-3xl font-bold text-black">Vendors</h1>
+            <p className="text-black">Manage your supplier relationships</p>
           </div>
           <Button className="bg-[#2D5016] hover:bg-[#1F3509]">
             <Plus className="h-4 w-4 mr-2" />
@@ -121,8 +121,8 @@ export default function VendorsPage() {
                   <Building2 className="h-6 w-6 text-green-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Active Vendors</p>
-                  <p className="text-2xl font-bold text-gray-900">23</p>
+                  <p className="text-sm font-medium text-black">Active Vendors</p>
+                  <p className="text-2xl font-bold text-black">23</p>
                 </div>
               </div>
             </CardContent>
@@ -135,8 +135,8 @@ export default function VendorsPage() {
                   <Star className="h-6 w-6 text-blue-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Avg Rating</p>
-                  <p className="text-2xl font-bold text-gray-900">4.3</p>
+                  <p className="text-sm font-medium text-black">Avg Rating</p>
+                  <p className="text-2xl font-bold text-black">4.3</p>
                 </div>
               </div>
             </CardContent>
@@ -149,8 +149,8 @@ export default function VendorsPage() {
                   <Building2 className="h-6 w-6 text-purple-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Categories</p>
-                  <p className="text-2xl font-bold text-gray-900">8</p>
+                  <p className="text-sm font-medium text-black">Categories</p>
+                  <p className="text-2xl font-bold text-black">8</p>
                 </div>
               </div>
             </CardContent>
@@ -163,8 +163,8 @@ export default function VendorsPage() {
                   <Building2 className="h-6 w-6 text-orange-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Value</p>
-                  <p className="text-2xl font-bold text-gray-900">₦12.6M</p>
+                  <p className="text-sm font-medium text-black">Total Value</p>
+                  <p className="text-2xl font-bold text-black">₦12.6M</p>
                 </div>
               </div>
             </CardContent>
@@ -180,8 +180,8 @@ export default function VendorsPage() {
                   {/* Header */}
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{vendor.name}</h3>
-                      <p className="text-sm text-gray-600">{vendor.category}</p>
+                      <h3 className="text-lg font-semibold text-black">{vendor.name}</h3>
+                      <p className="text-sm text-black">{vendor.category}</p>
                     </div>
                     <span className={getStatusBadge(vendor.status)}>
                       {vendor.status.charAt(0).toUpperCase() + vendor.status.slice(1)}
@@ -193,20 +193,20 @@ export default function VendorsPage() {
                     <div className="flex items-center space-x-1">
                       {renderStars(vendor.rating)}
                     </div>
-                    <span className="text-sm text-gray-600">({vendor.rating})</span>
+                    <span className="text-sm text-black">({vendor.rating})</span>
                   </div>
 
                   {/* Contact Info */}
                   <div className="space-y-2">
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <div className="flex items-center space-x-2 text-sm text-black">
                       <Mail className="h-4 w-4" />
                       <span>{vendor.email}</span>
                     </div>
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <div className="flex items-center space-x-2 text-sm text-black">
                       <Phone className="h-4 w-4" />
                       <span>{vendor.phone}</span>
                     </div>
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <div className="flex items-center space-x-2 text-sm text-black">
                       <MapPin className="h-4 w-4" />
                       <span>{vendor.address}</span>
                     </div>
@@ -215,12 +215,12 @@ export default function VendorsPage() {
                   {/* Stats */}
                   <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200">
                     <div>
-                      <p className="text-sm text-gray-600">Total Orders</p>
-                      <p className="text-xl font-semibold text-gray-900">{vendor.totalOrders}</p>
+                      <p className="text-sm text-black">Total Orders</p>
+                      <p className="text-xl font-semibold text-black">{vendor.totalOrders}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Total Value</p>
-                      <p className="text-xl font-semibold text-gray-900">{vendor.totalValue}</p>
+                      <p className="text-sm text-black">Total Value</p>
+                      <p className="text-xl font-semibold text-black">{vendor.totalValue}</p>
                     </div>
                   </div>
 
@@ -249,14 +249,14 @@ export default function VendorsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Vendor</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Category</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Contact</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Rating</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Orders</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Total Value</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Status</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Actions</th>
+                    <th className="text-left py-3 px-4 font-medium text-black">Vendor</th>
+                    <th className="text-left py-3 px-4 font-medium text-black">Category</th>
+                    <th className="text-left py-3 px-4 font-medium text-black">Contact</th>
+                    <th className="text-left py-3 px-4 font-medium text-black">Rating</th>
+                    <th className="text-left py-3 px-4 font-medium text-black">Orders</th>
+                    <th className="text-left py-3 px-4 font-medium text-black">Total Value</th>
+                    <th className="text-left py-3 px-4 font-medium text-black">Status</th>
+                    <th className="text-left py-3 px-4 font-medium text-black">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -264,25 +264,25 @@ export default function VendorsPage() {
                     <tr key={vendor.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-4">
                         <div>
-                          <p className="font-medium text-gray-900">{vendor.name}</p>
-                          <p className="text-xs text-gray-600">{vendor.id}</p>
+                          <p className="font-medium text-black">{vendor.name}</p>
+                          <p className="text-xs text-black">{vendor.id}</p>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-gray-600">{vendor.category}</td>
+                      <td className="py-3 px-4 text-black">{vendor.category}</td>
                       <td className="py-3 px-4">
                         <div>
-                          <p className="text-gray-900">{vendor.email}</p>
-                          <p className="text-xs text-gray-600">{vendor.phone}</p>
+                          <p className="text-black">{vendor.email}</p>
+                          <p className="text-xs text-black">{vendor.phone}</p>
                         </div>
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center space-x-1">
                           {renderStars(vendor.rating).slice(0, 5)}
-                          <span className="text-xs text-gray-600">({vendor.rating})</span>
+                          <span className="text-xs text-black">({vendor.rating})</span>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-gray-900">{vendor.totalOrders}</td>
-                      <td className="py-3 px-4 font-medium text-gray-900">{vendor.totalValue}</td>
+                      <td className="py-3 px-4 text-black">{vendor.totalOrders}</td>
+                      <td className="py-3 px-4 font-medium text-black">{vendor.totalValue}</td>
                       <td className="py-3 px-4">
                         <span className={getStatusBadge(vendor.status)}>
                           {vendor.status.charAt(0).toUpperCase() + vendor.status.slice(1)}

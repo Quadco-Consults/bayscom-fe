@@ -66,8 +66,8 @@ export default function RolesPage() {
         {/* Page Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Roles & Permissions</h1>
-            <p className="text-gray-600">Manage user roles and access permissions</p>
+            <h1 className="text-3xl font-bold text-black">Roles & Permissions</h1>
+            <p className="text-black">Manage user roles and access permissions</p>
           </div>
           <Button>
             <Plus className="mr-2 h-4 w-4" />
@@ -83,7 +83,7 @@ export default function RolesPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <CardTitle>{role.name}</CardTitle>
-                    <p className="text-sm text-gray-600 mt-1">{role.description}</p>
+                    <p className="text-sm text-black mt-1">{role.description}</p>
                   </div>
                   <div className="flex space-x-1">
                     <Button variant="ghost" size="icon">
@@ -121,8 +121,8 @@ export default function RolesPage() {
               {modules.map((module) => (
                 <div key={module.value} className="flex items-center justify-between border-b pb-3">
                   <div>
-                    <p className="font-medium text-gray-900">{module.name}</p>
-                    <p className="text-sm text-gray-600">{module.value}</p>
+                    <p className="font-medium text-black">{module.name}</p>
+                    <p className="text-sm text-black">{module.value}</p>
                   </div>
                   <div className="flex gap-2">
                     {actions.map((action) => (
