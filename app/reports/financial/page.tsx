@@ -1,7 +1,9 @@
 'use client'
+export const dynamic = 'force-dynamic'
+
 
 import { useState } from 'react'
-import DashboardLayout from '@/components/DashboardLayout'
+import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Calendar, Download, Filter, FileText, BarChart3, TrendingUp, TrendingDown, DollarSign, Calculator, PieChart, Activity, CreditCard, Banknote, Target, AlertTriangle } from 'lucide-react'
 
 interface FinancialReports {

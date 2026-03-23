@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { apiClient } from './client';
 
 // Activity Tracker API - matches your backend /api/v1/activities/

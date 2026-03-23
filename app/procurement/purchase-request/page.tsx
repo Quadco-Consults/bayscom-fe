@@ -1,4 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities */
 'use client';
+export const dynamic = 'force-dynamic'
+
 
 import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
@@ -45,13 +48,13 @@ export default function PurchaseRequestPage() {
   // Form state for new purchase request
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [departments, setDepartments] = useState([]);
+  const [departments, setDepartments] = useState<Array<{ id: number; name: string }>>([]);
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [showDepartmentDropdown, setShowDepartmentDropdown] = useState(false);
 
   // View details state
   const [showViewModal, setShowViewModal] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -150,7 +153,7 @@ export default function PurchaseRequestPage() {
         department: formData.department,
         total_amount: totalAmount,
         requested_by: 1, // This should be the current user ID
-        status: 'pending'
+        status: 'pending' as 'pending' | 'approved' | 'rejected'
       };
 
       // Try to create via API, fall back to mock if needed

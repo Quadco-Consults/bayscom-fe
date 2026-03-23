@@ -1,7 +1,9 @@
 'use client'
+export const dynamic = 'force-dynamic'
+
 
 import { useState } from 'react'
-import DashboardLayout from '@/components/DashboardLayout'
+import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Calendar, Search, Filter, Download, Plus, AlertTriangle, CheckCircle, Clock, XCircle, Eye, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react'
 
 interface InventoryAdjustment {

@@ -1,8 +1,16 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
+export const dynamic = 'force-dynamic'
 
-import { useState } from 'react'
-import DashboardLayout from '@/components/DashboardLayout'
-import { Search, Filter, Download, Plus, Eye, Edit, Phone, Mail, MapPin, Calendar, TrendingUp, Users, Building, DollarSign, Star } from 'lucide-react'
+
+import { useState, useMemo } from 'react'
+import { DashboardLayout } from '@/components/layout/dashboard-layout'
+import {
+  Search, Download, Plus, Eye, Edit,
+  ChevronLeft, ChevronRight, ArrowUpDown,
+  Users, DollarSign, Star, CreditCard
+} from 'lucide-react'
+import Link from 'next/link'
 
 interface Customer {
   id: string
@@ -181,57 +189,111 @@ const mockCustomers: Customer[] = [
 ]
 
 export default function CustomersOverviewPage() {
-  const [customers, setCustomers] = useState<Customer[]>(mockCustomers)
+  const [customers] = useState<Customer[]>(mockCustomers)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterRegion, setFilterRegion] = useState<string>('all')
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [sortBy, setSortBy] = useState<'name' | 'revenue' | 'orders' | 'balance'>('name')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
-  const customerTypes = [
-    { value: 'all', label: 'All Types' },
-    { value: 'retail', label: 'Retail' },
-    { value: 'wholesale', label: 'Wholesale' },
-    { value: 'industrial', label: 'Industrial' },
-    { value: 'government', label: 'Government' }
-  ]
+  // Filter and sort customers
+  const filteredAndSortedCustomers = useMemo(() => {
+    const filtered = customers.filter(customer => {
+      const matchesSearch =
+        customer.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.customerCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.phone.includes(searchTerm)
 
-  const statusOptions = [
-    { value: 'all', label: 'All Status' },
-    { value: 'active', label: 'Active' },
-    { value: 'inactive', label: 'Inactive' },
-    { value: 'suspended', label: 'Suspended' },
-    { value: 'pending', label: 'Pending' }
-  ]
+      const matchesType = filterType === 'all' || customer.customerType === filterType
+      const matchesStatus = filterStatus === 'all' || customer.status === filterStatus
+      const matchesRegion = filterRegion === 'all' || customer.region === filterRegion
 
-  const regions = [
-    { value: 'all', label: 'All Regions' },
-    { value: 'South West', label: 'South West' },
-    { value: 'South East', label: 'South East' },
-    { value: 'South South', label: 'South South' },
-    { value: 'North Central', label: 'North Central' },
-    { value: 'North East', label: 'North East' },
-    { value: 'North West', label: 'North West' }
-  ]
+      return matchesSearch && matchesType && matchesStatus && matchesRegion
+    })
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'text-green-600 bg-green-100'
-      case 'inactive': return 'text-black bg-gray-100'
-      case 'suspended': return 'text-red-600 bg-red-100'
-      case 'pending': return 'text-yellow-600 bg-yellow-100'
-      default: return 'text-black bg-gray-100'
-    }
+    // Sort
+    filtered.sort((a, b) => {
+      let comparison = 0
+      switch (sortBy) {
+        case 'name':
+          comparison = a.companyName.localeCompare(b.companyName)
+          break
+        case 'revenue':
+          comparison = a.totalValue - b.totalValue
+          break
+        case 'orders':
+          comparison = a.totalOrders - b.totalOrders
+          break
+        case 'balance':
+          comparison = a.currentBalance - b.currentBalance
+          break
+      }
+      return sortOrder === 'asc' ? comparison : -comparison
+    })
+
+    return filtered
+  }, [customers, searchTerm, filterType, filterStatus, filterRegion, sortBy, sortOrder])
+
+  // Pagination
+  const totalPages = Math.ceil(filteredAndSortedCustomers.length / itemsPerPage)
+  const paginatedCustomers = filteredAndSortedCustomers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+
+  // Stats
+  const totalCustomers = filteredAndSortedCustomers.length
+  const activeCustomers = filteredAndSortedCustomers.filter(c => c.status === 'active').length
+  const totalRevenue = filteredAndSortedCustomers.reduce((sum, customer) => sum + customer.totalValue, 0)
+  const totalBalance = filteredAndSortedCustomers.reduce((sum, customer) => sum + customer.currentBalance, 0)
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+    }).format(amount)
   }
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'retail': return 'text-blue-600 bg-blue-100'
-      case 'wholesale': return 'text-purple-600 bg-purple-100'
-      case 'industrial': return 'text-orange-600 bg-orange-100'
-      case 'government': return 'text-green-600 bg-green-100'
-      default: return 'text-black bg-gray-100'
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-NG', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    })
+  }
+
+  const getStatusBadge = (status: string) => {
+    const styles = {
+      active: 'bg-green-100 text-green-800 border-green-200',
+      inactive: 'bg-gray-100 text-gray-800 border-gray-200',
+      suspended: 'bg-red-100 text-red-800 border-red-200',
+      pending: 'bg-yellow-100 text-yellow-800 border-yellow-200'
     }
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[status as keyof typeof styles]}`}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </span>
+    )
+  }
+
+  const getTypeBadge = (type: string) => {
+    const styles = {
+      retail: 'bg-blue-100 text-blue-800 border-blue-200',
+      wholesale: 'bg-purple-100 text-purple-800 border-purple-200',
+      industrial: 'bg-orange-100 text-orange-800 border-orange-200',
+      government: 'bg-teal-100 text-teal-800 border-teal-200'
+    }
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[type as keyof typeof styles]}`}>
+        {type.charAt(0).toUpperCase() + type.slice(1)}
+      </span>
+    )
   }
 
   const getRatingStars = (rating: number) => {
@@ -243,25 +305,14 @@ export default function CustomersOverviewPage() {
     ))
   }
 
-  const filteredCustomers = customers.filter(customer => {
-    const matchesSearch =
-      customer.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.customerCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.phone.includes(searchTerm)
-
-    const matchesType = filterType === 'all' || customer.customerType === filterType
-    const matchesStatus = filterStatus === 'all' || customer.status === filterStatus
-    const matchesRegion = filterRegion === 'all' || customer.region === filterRegion
-
-    return matchesSearch && matchesType && matchesStatus && matchesRegion
-  })
-
-  const totalCustomers = filteredCustomers.length
-  const activeCustomers = filteredCustomers.filter(c => c.status === 'active').length
-  const totalRevenue = filteredCustomers.reduce((sum, customer) => sum + customer.totalValue, 0)
-  const averageOrderValue = totalRevenue / filteredCustomers.reduce((sum, customer) => sum + customer.totalOrders, 0) || 0
+  const handleSort = (field: 'name' | 'revenue' | 'orders' | 'balance') => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortBy(field)
+      setSortOrder('asc')
+    }
+  }
 
   const exportToCSV = () => {
     const headers = [
@@ -271,22 +322,22 @@ export default function CustomersOverviewPage() {
     ]
     const csvContent = [
       headers.join(','),
-      ...filteredCustomers.map(customer =>
+      ...filteredAndSortedCustomers.map(customer =>
         [
           customer.customerCode,
-          customer.companyName,
-          customer.contactPerson,
+          `"${customer.companyName}"`,
+          `"${customer.contactPerson}"`,
           customer.email,
           customer.phone,
           customer.customerType,
           customer.status,
           customer.region,
           customer.totalOrders,
-          customer.totalValue.toLocaleString(),
-          customer.creditLimit.toLocaleString(),
-          customer.currentBalance.toLocaleString(),
+          customer.totalValue,
+          customer.creditLimit,
+          customer.currentBalance,
           customer.paymentTerms,
-          customer.salesRepresentative,
+          `"${customer.salesRepresentative}"`,
           customer.rating
         ].join(',')
       )
@@ -296,223 +347,320 @@ export default function CustomersOverviewPage() {
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'customers-overview.csv'
+    a.download = `customers-${new Date().toISOString().split('T')[0]}.csv`
     a.click()
+    window.URL.revokeObjectURL(url)
   }
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-black">Customer Management</h1>
-            <p className="text-black">Manage your customer relationships and accounts</p>
+            <h1 className="text-2xl font-bold text-gray-900">Customer Management</h1>
+            <p className="text-sm text-gray-600 mt-1">Manage customer relationships and accounts</p>
           </div>
-          <div className="flex space-x-3">
+          <div className="flex flex-wrap gap-3">
             <button
               onClick={exportToCSV}
-              className="px-4 py-2 bg-gray-100 text-black rounded-md hover:bg-gray-200 flex items-center space-x-2"
+              className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              <Download className="h-4 w-4" />
-              <span>Export CSV</span>
+              <Download className="h-4 w-4 mr-2" />
+              Export
             </button>
-            <button className="px-4 py-2 bg-[#8B1538] text-white rounded-md hover:bg-[#7A1230] flex items-center space-x-2">
-              <Plus className="h-4 w-4" />
-              <span>Add Customer</span>
+            <button className="inline-flex items-center px-4 py-2 bg-[#8B1538] text-white rounded-lg hover:bg-[#7A1230] transition-colors">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Customer
             </button>
           </div>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <Users className="h-8 w-8 text-[#8B1538]" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-black">Total Customers</p>
-                <p className="text-2xl font-bold text-black">{totalCustomers}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white p-5 rounded-lg border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Customers</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{totalCustomers}</p>
+                <p className="text-xs text-green-600 mt-1">
+                  {activeCustomers} active
+                </p>
+              </div>
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <Users className="h-6 w-6 text-blue-600" />
               </div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <Building className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-black">Active Customers</p>
-                <p className="text-2xl font-bold text-black">{activeCustomers}</p>
+
+          <div className="bg-white p-5 rounded-lg border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">
+                  ₦{(totalRevenue / 1000000000).toFixed(2)}B
+                </p>
+                <p className="text-xs text-gray-500 mt-1">All-time</p>
+              </div>
+              <div className="p-3 rounded-lg" style={{ backgroundColor: '#FFF5F5' }}>
+                <DollarSign className="h-6 w-6" style={{ color: '#8B1538' }} />
               </div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <DollarSign className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-black">Total Revenue</p>
-                <p className="text-2xl font-bold text-black">₦{(totalRevenue / 1000000).toFixed(0)}M</p>
+
+          <div className="bg-white p-5 rounded-lg border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Outstanding Balance</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">
+                  ₦{(totalBalance / 1000000).toFixed(0)}M
+                </p>
+                <p className="text-xs text-gray-500 mt-1">To be collected</p>
+              </div>
+              <div className="p-3 bg-orange-50 rounded-lg">
+                <CreditCard className="h-6 w-6 text-orange-600" />
               </div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <TrendingUp className="h-8 w-8 text-[#E67E22]" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-black">Avg Order Value</p>
-                <p className="text-2xl font-bold text-black">₦{(averageOrderValue / 1000).toFixed(0)}K</p>
+
+          <div className="bg-white p-5 rounded-lg border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Avg. Rating</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">
+                  {(filteredAndSortedCustomers.reduce((sum, c) => sum + c.rating, 0) / filteredAndSortedCustomers.length || 0).toFixed(1)}
+                </p>
+                <div className="flex items-center mt-1">
+                  <Star className="h-3 w-3 text-yellow-400 fill-current" />
+                  <span className="text-xs text-gray-500 ml-1">Customer satisfaction</span>
+                </div>
+              </div>
+              <div className="p-3 bg-yellow-50 rounded-lg">
+                <Star className="h-6 w-6 text-yellow-600" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="bg-white p-5 rounded-lg border border-gray-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="lg:col-span-2">
-              <label className="block text-sm font-medium text-black mb-2">Search</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <input
                   type="text"
-                  placeholder="Search customers..."
-                  className="w-full pl-10 pr-4 py-2 border rounded-md focus:ring-2 focus:ring-[#8B1538] focus:border-transparent"
+                  placeholder="Search by name, code, email, phone..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B1538] focus:border-transparent"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value)
+                    setCurrentPage(1)
+                  }}
                 />
               </div>
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-black mb-2">Customer Type</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
               <select
-                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#8B1538] focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B1538] focus:border-transparent"
                 value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
+                onChange={(e) => {
+                  setFilterType(e.target.value)
+                  setCurrentPage(1)
+                }}
               >
-                {customerTypes.map(type => (
-                  <option key={type.value} value={type.value}>{type.label}</option>
-                ))}
+                <option value="all">All Types</option>
+                <option value="retail">Retail</option>
+                <option value="wholesale">Wholesale</option>
+                <option value="industrial">Industrial</option>
+                <option value="government">Government</option>
               </select>
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-black mb-2">Status</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
               <select
-                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#8B1538] focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B1538] focus:border-transparent"
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
+                onChange={(e) => {
+                  setFilterStatus(e.target.value)
+                  setCurrentPage(1)
+                }}
               >
-                {statusOptions.map(status => (
-                  <option key={status.value} value={status.value}>{status.label}</option>
-                ))}
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="suspended">Suspended</option>
+                <option value="pending">Pending</option>
               </select>
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-black mb-2">Region</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Region</label>
               <select
-                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-[#8B1538] focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B1538] focus:border-transparent"
                 value={filterRegion}
-                onChange={(e) => setFilterRegion(e.target.value)}
+                onChange={(e) => {
+                  setFilterRegion(e.target.value)
+                  setCurrentPage(1)
+                }}
               >
-                {regions.map(region => (
-                  <option key={region.value} value={region.value}>{region.label}</option>
-                ))}
+                <option value="all">All Regions</option>
+                <option value="South West">South West</option>
+                <option value="South East">South East</option>
+                <option value="South South">South South</option>
+                <option value="North Central">North Central</option>
+                <option value="North East">North East</option>
+                <option value="North West">North West</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Results and Sorting */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 rounded-lg border border-gray-200">
+          <div className="text-sm text-gray-600">
+            Showing <span className="font-medium text-gray-900">{((currentPage - 1) * itemsPerPage) + 1}</span> to{' '}
+            <span className="font-medium text-gray-900">
+              {Math.min(currentPage * itemsPerPage, filteredAndSortedCustomers.length)}
+            </span> of{' '}
+            <span className="font-medium text-gray-900">{filteredAndSortedCustomers.length}</span> customers
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Sort by:</label>
+              <select
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B1538] focus:border-transparent"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+              >
+                <option value="name">Name</option>
+                <option value="revenue">Revenue</option>
+                <option value="orders">Orders</option>
+                <option value="balance">Balance</option>
+              </select>
+              <button
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="p-1.5 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                <ArrowUpDown className="h-4 w-4 text-gray-600" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Show:</label>
+              <select
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B1538] focus:border-transparent"
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value))
+                  setCurrentPage(1)
+                }}
+              >
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
               </select>
             </div>
           </div>
         </div>
 
         {/* Customers Table */}
-        <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Customer
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                    Contact Information
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Contact
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                    Type & Status
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                    Business Metrics
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                    Financial Info
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total Orders
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Revenue
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Balance
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Rating
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredCustomers.map((customer) => (
-                  <tr key={customer.id} className="hover:bg-gray-50">
+                {paginatedCustomers.map((customer) => (
+                  <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm font-medium text-black">{customer.companyName}</div>
-                        <div className="text-sm text-black">{customer.customerCode}</div>
-                        <div className="text-sm text-black">{customer.contactPerson}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center text-sm text-black">
-                          <Mail className="h-3 w-3 mr-1 text-gray-400" />
-                          {customer.email}
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-[#8B1538] to-[#7A1230] rounded-lg flex items-center justify-center">
+                          <span className="text-white font-semibold text-sm">
+                            {customer.companyName.charAt(0)}
+                          </span>
                         </div>
-                        <div className="flex items-center text-sm text-black">
-                          <Phone className="h-3 w-3 mr-1 text-gray-400" />
-                          {customer.phone}
-                        </div>
-                        <div className="flex items-center text-sm text-black">
-                          <MapPin className="h-3 w-3 mr-1 text-gray-400" />
-                          {customer.city}, {customer.state}
+                        <div className="ml-3">
+                          <div className="text-sm font-medium text-gray-900">{customer.companyName}</div>
+                          <div className="text-xs text-gray-500">{customer.customerCode}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="space-y-2">
-                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeColor(customer.customerType)}`}>
-                          <span className="capitalize">{customer.customerType}</span>
-                        </span>
-                        <br />
-                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(customer.status)}`}>
-                          <span className="capitalize">{customer.status}</span>
-                        </span>
+                      <div className="text-sm text-gray-900">{customer.contactPerson}</div>
+                      <div className="text-xs text-gray-500">{customer.email}</div>
+                      <div className="text-xs text-gray-500">{customer.phone}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {getTypeBadge(customer.customerType)}
+                    </td>
+                    <td className="px-6 py-4">
+                      {getStatusBadge(customer.status)}
+                    </td>
+                    <td className="px-6 py-4 text-right text-sm text-gray-900 font-medium">
+                      {customer.totalOrders}
+                    </td>
+                    <td className="px-6 py-4 text-right text-sm text-gray-900 font-medium">
+                      ₦{(customer.totalValue / 1000000).toFixed(1)}M
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="text-sm font-medium text-gray-900">
+                        ₦{(customer.currentBalance / 1000000).toFixed(1)}M
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        of ₦{(customer.creditLimit / 1000000).toFixed(0)}M
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-black">
-                        <div>Orders: <span className="font-medium">{customer.totalOrders}</span></div>
-                        <div>Revenue: <span className="font-medium">₦{(customer.totalValue / 1000000).toFixed(1)}M</span></div>
-                        <div>Region: <span className="text-black">{customer.region}</span></div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-black">
-                        <div>Credit: <span className="font-medium">₦{(customer.creditLimit / 1000000).toFixed(0)}M</span></div>
-                        <div>Balance: <span className="font-medium">₦{(customer.currentBalance / 1000000).toFixed(1)}M</span></div>
-                        <div>Terms: <span className="text-black">{customer.paymentTerms}</span></div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-1">
+                      <div className="flex items-center justify-center gap-0.5">
                         {getRatingStars(customer.rating)}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => setSelectedCustomer(customer)}
-                          className="text-[#8B1538] hover:text-[#7A1230]"
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <Link
+                          href={`/customers/overview/${customer.id}`}
+                          className="inline-flex items-center px-3 py-1.5 bg-[#8B1538] text-white rounded-md hover:bg-[#7A1230] text-xs font-medium transition-colors"
                         >
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button className="text-blue-600 hover:text-blue-800">
+                          <Eye className="h-3.5 w-3.5 mr-1" />
+                          View
+                        </Link>
+                        <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors">
                           <Edit className="h-4 w-4" />
                         </button>
                       </div>
@@ -522,185 +670,82 @@ export default function CustomersOverviewPage() {
               </tbody>
             </table>
           </div>
-        </div>
 
-        {/* Customer Details Modal */}
-        {selectedCustomer && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-black">
-                  Customer Details - {selectedCustomer.companyName}
-                </h2>
-                <button
-                  onClick={() => setSelectedCustomer(null)}
-                  className="text-gray-400 hover:text-black"
-                >
-                  ×
-                </button>
+          {/* Pagination */}
+          <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Page <span className="font-medium">{currentPage}</span> of{' '}
+                  <span className="font-medium">{totalPages}</span>
+                </p>
               </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
 
-              <div className="space-y-6">
-                {/* Basic Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium text-black">Company Information</h3>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-sm font-medium text-black">Customer Code</label>
-                        <p className="text-sm text-black font-medium">{selectedCustomer.customerCode}</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-black">Company Name</label>
-                        <p className="text-sm text-black font-medium">{selectedCustomer.companyName}</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-black">Contact Person</label>
-                        <p className="text-sm text-black">{selectedCustomer.contactPerson}</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-black">Customer Type</label>
-                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeColor(selectedCustomer.customerType)}`}>
-                          <span className="capitalize">{selectedCustomer.customerType}</span>
-                        </span>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-black">Status</label>
-                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedCustomer.status)}`}>
-                          <span className="capitalize">{selectedCustomer.status}</span>
-                        </span>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-black">Rating</label>
-                        <div className="flex items-center space-x-1">
-                          {getRatingStars(selectedCustomer.rating)}
-                          <span className="text-sm text-black ml-2">({selectedCustomer.rating}/5)</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNumber
+                    if (totalPages <= 5) {
+                      pageNumber = i + 1
+                    } else if (currentPage <= 3) {
+                      pageNumber = i + 1
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNumber = totalPages - 4 + i
+                    } else {
+                      pageNumber = currentPage - 2 + i
+                    }
 
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium text-black">Contact Information</h3>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-sm font-medium text-black">Email</label>
-                        <p className="text-sm text-black">{selectedCustomer.email}</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-black">Phone</label>
-                        <p className="text-sm text-black">{selectedCustomer.phone}</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-black">Address</label>
-                        <p className="text-sm text-black">{selectedCustomer.address}</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-black">City, State</label>
-                        <p className="text-sm text-black">{selectedCustomer.city}, {selectedCustomer.state}</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-black">Region</label>
-                        <p className="text-sm text-black">{selectedCustomer.region}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                    return (
+                      <button
+                        key={pageNumber}
+                        onClick={() => setCurrentPage(pageNumber)}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          currentPage === pageNumber
+                            ? 'z-10 bg-[#8B1538] border-[#8B1538] text-white'
+                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNumber}
+                      </button>
+                    )
+                  })}
 
-                {/* Business Metrics */}
-                <div className="border-t pt-6">
-                  <h3 className="text-lg font-medium text-black mb-4">Business Metrics</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">{selectedCustomer.totalOrders}</div>
-                      <div className="text-sm text-black">Total Orders</div>
-                    </div>
-                    <div className="bg-green-50 p-4 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">₦{(selectedCustomer.totalValue / 1000000).toFixed(1)}M</div>
-                      <div className="text-sm text-black">Total Revenue</div>
-                    </div>
-                    <div className="bg-yellow-50 p-4 rounded-lg">
-                      <div className="text-2xl font-bold text-yellow-600">₦{((selectedCustomer.totalValue / selectedCustomer.totalOrders) / 1000).toFixed(0)}K</div>
-                      <div className="text-sm text-black">Avg Order Value</div>
-                    </div>
-                    <div className="bg-purple-50 p-4 rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">{Math.round((Date.now() - new Date(selectedCustomer.lastOrderDate).getTime()) / (1000 * 60 * 60 * 24))}</div>
-                      <div className="text-sm text-black">Days Since Last Order</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Financial Information */}
-                <div className="border-t pt-6">
-                  <h3 className="text-lg font-medium text-black mb-4">Financial Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-black">Credit Limit</label>
-                      <p className="text-lg font-bold text-black">₦{selectedCustomer.creditLimit.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-black">Current Balance</label>
-                      <p className="text-lg font-bold text-black">₦{selectedCustomer.currentBalance.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-black">Payment Terms</label>
-                      <p className="text-lg font-bold text-black">{selectedCustomer.paymentTerms}</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-black">Credit Utilization</label>
-                      <div className="flex items-center space-x-2">
-                        <div className="flex-1 bg-gray-200 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full ${selectedCustomer.currentBalance / selectedCustomer.creditLimit > 0.8 ? 'bg-red-500' : selectedCustomer.currentBalance / selectedCustomer.creditLimit > 0.5 ? 'bg-yellow-500' : 'bg-green-500'}`}
-                            style={{ width: `${Math.min((selectedCustomer.currentBalance / selectedCustomer.creditLimit) * 100, 100)}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-sm text-black">
-                          {Math.round((selectedCustomer.currentBalance / selectedCustomer.creditLimit) * 100)}%
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Products and Sales Rep */}
-                <div className="border-t pt-6">
-                  <h3 className="text-lg font-medium text-black mb-4">Additional Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-black">Products Purchased</label>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {selectedCustomer.products.map((product, index) => (
-                          <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-md">
-                            {product}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-black">Sales Representative</label>
-                      <p className="text-sm text-black">{selectedCustomer.salesRepresentative}</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-black">Registration Date</label>
-                      <p className="text-sm text-black">{selectedCustomer.registrationDate}</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-black">Last Order Date</label>
-                      <p className="text-sm text-black">{selectedCustomer.lastOrderDate}</p>
-                    </div>
-                    {selectedCustomer.notes && (
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-black">Notes</label>
-                        <p className="text-sm text-black">{selectedCustomer.notes}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </nav>
               </div>
             </div>
           </div>
-        )}
+        </div>
+
       </div>
     </DashboardLayout>
   )

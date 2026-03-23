@@ -1,4 +1,6 @@
 'use client';
+export const dynamic = 'force-dynamic'
+
 
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { StatsCard } from '@/components/dashboard/stats-card';

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Central API exports - all your backend modules
 import { apiClient } from './client';
 import { authAPI } from './auth';

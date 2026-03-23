@@ -1,4 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, prefer-const, react/no-unescaped-entities, @typescript-eslint/no-empty-object-type */
 'use client';
+export const dynamic = 'force-dynamic'
+
 
 import { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';

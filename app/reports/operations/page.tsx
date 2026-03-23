@@ -1,7 +1,9 @@
 'use client';
+export const dynamic = 'force-dynamic'
+
 
 import { useState } from 'react';
-import DashboardLayout from '@/components/layout/dashboard-layout';
+import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import {
   Activity,
   Truck,

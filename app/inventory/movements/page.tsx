@@ -1,7 +1,9 @@
 'use client'
+export const dynamic = 'force-dynamic'
+
 
 import { useState } from 'react'
-import DashboardLayout from '@/components/DashboardLayout'
+import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Calendar, Search, Filter, Download, Plus, ArrowUpDown, ArrowUp, ArrowDown, Truck, MapPin, CheckCircle, Clock, AlertTriangle, Eye } from 'lucide-react'
 
 interface StockMovement {

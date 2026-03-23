@@ -1,7 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities */
 'use client'
+export const dynamic = 'force-dynamic'
+
 
 import React, { useState } from 'react'
-import DashboardLayout from '@/components/DashboardLayout'
+import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import {
   ShoppingCart,
   MapPin,

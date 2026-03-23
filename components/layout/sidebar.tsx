@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, prefer-const, react/no-unescaped-entities, @typescript-eslint/no-empty-object-type */
 'use client';
 
 import Link from 'next/link';
@@ -38,11 +39,37 @@ import {
   CreditCard,
   MoveDiagonal,
   Calculator,
+  Wallet,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useAuthStore } from '@/lib/stores/authStore';
 
-const menuSections = [
+// Type definitions for nested menu structure
+interface NestedMenuItem {
+  title: string;
+  href: string;
+}
+
+interface SubMenuItem {
+  title: string;
+  href: string;
+  subItems?: NestedMenuItem[];
+}
+
+interface MenuItem {
+  title: string;
+  href: string;
+  icon: any;
+  subItems?: SubMenuItem[];
+}
+
+interface MenuSection {
+  section: string;
+  collapsible?: boolean;
+  items: MenuItem[];
+}
+
+const menuSections: MenuSection[] = [
   {
     section: 'Dashboard',
     items: [
@@ -58,19 +85,108 @@ const menuSections = [
     collapsible: true,
     items: [
       {
-        title: 'General Ledger',
-        href: '/finance/general-ledger',
+        title: 'Finance Dashboard',
+        href: '/finance/dashboard',
+        icon: LayoutDashboard,
+      },
+      {
+        title: 'Memos',
+        href: '/finance/memos',
         icon: FileText,
       },
       {
-        title: 'Accounts Payable',
-        href: '/finance/accounts-payable',
+        title: 'Payment Vouchers',
+        href: '/finance/vouchers',
         icon: CreditCard,
+      },
+      {
+        title: 'Petty Cash',
+        href: '/finance/petty-cash',
+        icon: Wallet,
+      },
+      {
+        title: 'Cash Advances',
+        href: '/finance/advances',
+        icon: DollarSign,
+      },
+      {
+        title: 'General Ledger',
+        href: '/finance/general-ledger',
+        icon: FileText,
+        subItems: [
+          {
+            title: 'Chart of Accounts',
+            href: '/finance/general-ledger/chart-of-accounts',
+          },
+          {
+            title: 'Journal Entries',
+            href: '/finance/general-ledger/journal-entries',
+          },
+          {
+            title: 'Trial Balance',
+            href: '/finance/general-ledger/trial-balance',
+          },
+        ],
       },
       {
         title: 'Accounts Receivable',
         href: '/finance/accounts-receivable',
         icon: DollarSign,
+        subItems: [
+          {
+            title: 'AR Aging Report',
+            href: '/finance/accounts-receivable/aging',
+          },
+          {
+            title: 'Customer Invoices',
+            href: '/finance/accounts-receivable/invoices',
+          },
+        ],
+      },
+      {
+        title: 'Accounts Payable',
+        href: '/finance/accounts-payable',
+        icon: CreditCard,
+        subItems: [
+          {
+            title: 'AP Aging Report',
+            href: '/finance/accounts-payable/aging',
+          },
+          {
+            title: 'Vendor Management',
+            href: '/finance/accounts-payable/vendors',
+          },
+        ],
+      },
+      {
+        title: 'Fixed Assets',
+        href: '/finance/fixed-assets',
+        icon: Truck,
+      },
+      {
+        title: 'Bank Reconciliation',
+        href: '/finance/bank-reconciliation',
+        icon: Building2,
+      },
+      {
+        title: 'Tax Management',
+        href: '/finance/tax-management',
+        icon: FileText,
+      },
+      {
+        title: 'Dimensions',
+        href: '/finance/dimensions/cost-centers',
+        icon: Target,
+        subItems: [
+          {
+            title: 'Cost Centers',
+            href: '/finance/dimensions/cost-centers',
+          },
+          {
+            title: 'Projects',
+            href: '/finance/dimensions/projects',
+          },
+        ],
       },
       {
         title: 'Cash Flow',
@@ -86,6 +202,16 @@ const menuSections = [
         title: 'Financial Reports',
         href: '/finance/reports',
         icon: BarChart3,
+        subItems: [
+          {
+            title: 'Station P&L',
+            href: '/finance/reports/station-pl',
+          },
+          {
+            title: 'All Reports',
+            href: '/finance/reports',
+          },
+        ],
       },
     ],
   },
@@ -162,19 +288,128 @@ const menuSections = [
     collapsible: true,
     items: [
       {
-        title: 'Fleet Management',
-        href: '/trucks',
+        title: 'Fleet & Haulage',
+        href: '/fleet-haulage/dashboard',
         icon: Truck,
+        subItems: [
+          {
+            title: 'Dashboard',
+            href: '/fleet-haulage/dashboard',
+          },
+          {
+            title: 'New Trip',
+            href: '/fleet-haulage/new-trip',
+          },
+          {
+            title: 'Trip Log',
+            href: '/fleet-haulage/trip-log',
+          },
+          {
+            title: 'Truck Fleet',
+            href: '/fleet-haulage/trucks',
+          },
+          {
+            title: 'P&L Summary',
+            href: '/fleet-haulage/pl-summary',
+          },
+        ],
       },
       {
-        title: 'Filling Stations',
-        href: '/filling-stations',
+        title: 'Fuel Operations',
+        href: '/fuel-operations/filling-station/pms-stock',
         icon: Fuel,
-      },
-      {
-        title: 'LPG Operations',
-        href: '/lpg-operations',
-        icon: Flame,
+        subItems: [
+          {
+            title: 'Filling Station',
+            href: '/fuel-operations/filling-station/pms-stock',
+            subItems: [
+              {
+                title: 'PMS Stock',
+                href: '/fuel-operations/filling-station/pms-stock',
+              },
+              {
+                title: 'AGO Stock',
+                href: '/fuel-operations/filling-station/ago-stock',
+              },
+              {
+                title: 'Bank Lodgements',
+                href: '/fuel-operations/filling-station/lodgements',
+              },
+              {
+                title: 'Reconciliation',
+                href: '/fuel-operations/filling-station/reconciliation',
+              },
+            ],
+          },
+          {
+            title: 'LPG Section',
+            href: '/fuel-operations/lpg/dashboard',
+            subItems: [
+              {
+                title: 'Dashboard',
+                href: '/fuel-operations/lpg/dashboard',
+              },
+              {
+                title: 'Daily Sales',
+                href: '/fuel-operations/lpg/daily-sales',
+              },
+              {
+                title: 'Purchases',
+                href: '/fuel-operations/lpg/purchases',
+              },
+              {
+                title: 'Accessories',
+                href: '/fuel-operations/lpg/accessories',
+              },
+              {
+                title: 'Expenses',
+                href: '/fuel-operations/lpg/expenses',
+              },
+              {
+                title: 'P&L Statement',
+                href: '/fuel-operations/lpg/pl-statement',
+              },
+              {
+                title: 'Reconciliation',
+                href: '/fuel-operations/lpg/reconciliation',
+              },
+            ],
+          },
+          {
+            title: 'AGO Peddling',
+            href: '/fuel-operations/ago-peddling/dashboard',
+            subItems: [
+              {
+                title: 'Dashboard',
+                href: '/fuel-operations/ago-peddling/dashboard',
+              },
+              {
+                title: 'Daily Sales',
+                href: '/fuel-operations/ago-peddling/daily-sales',
+              },
+              {
+                title: 'Purchases',
+                href: '/fuel-operations/ago-peddling/purchases',
+              },
+              {
+                title: 'Inventory',
+                href: '/fuel-operations/ago-peddling/inventory',
+              },
+              {
+                title: 'Expenses',
+                href: '/fuel-operations/ago-peddling/expenses',
+              },
+              {
+                title: 'P&L Statement',
+                href: '/fuel-operations/ago-peddling/pl-statement',
+              },
+              {
+                title: 'Reconciliation',
+                href: '/fuel-operations/ago-peddling/reconciliation',
+              },
+            ],
+          },
+        ],
       },
       {
         title: 'Trading Operations',
@@ -394,20 +629,73 @@ export function Sidebar() {
               <div className="space-y-1">
                 {section.items.map((item) => {
                   const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+                  const hasSubItems = item.subItems && item.subItems.length > 0;
+
                   return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={cn(
-                        'flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                        isActive
-                          ? 'bg-[#8B1538] text-white'
-                          : 'text-gray-700 hover:bg-gray-200 hover:text-gray-900'
+                    <div key={item.href}>
+                      <Link
+                        href={item.href}
+                        className={cn(
+                          'flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                          isActive
+                            ? 'bg-[#8B1538] text-white'
+                            : 'text-gray-700 hover:bg-gray-200 hover:text-gray-900'
+                        )}
+                      >
+                        <item.icon className="h-5 w-5" />
+                        <span>{item.title}</span>
+                      </Link>
+
+                      {/* Render SubItems if they exist */}
+                      {hasSubItems && (
+                        <div className="ml-8 mt-1 space-y-1">
+                          {item.subItems?.map((subItem) => {
+                            const isSubActive = pathname === subItem.href;
+                            const hasNestedSubItems = subItem.subItems && subItem.subItems.length > 0;
+
+                            return (
+                              <div key={subItem.href}>
+                                <Link
+                                  href={subItem.href}
+                                  className={cn(
+                                    'block rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
+                                    isSubActive
+                                      ? 'bg-[#E67E22] text-white'
+                                      : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                                  )}
+                                >
+                                  {subItem.title}
+                                </Link>
+
+                                {/* Render Nested SubItems if they exist */}
+                                {hasNestedSubItems && (
+                                  <div className="ml-4 mt-1 space-y-1">
+                                    {subItem.subItems?.map((nestedItem) => {
+                                      const isNestedActive = pathname === nestedItem.href;
+
+                                      return (
+                                        <Link
+                                          key={nestedItem.href}
+                                          href={nestedItem.href}
+                                          className={cn(
+                                            'block rounded-lg px-3 py-1 text-xs transition-colors',
+                                            isNestedActive
+                                              ? 'bg-gray-300 text-gray-900 font-medium'
+                                              : 'text-gray-500 hover:bg-gray-200 hover:text-gray-900'
+                                          )}
+                                        >
+                                          {nestedItem.title}
+                                        </Link>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       )}
-                    >
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
-                    </Link>
+                    </div>
                   );
                 })}
               </div>

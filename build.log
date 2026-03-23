@@ -1,0 +1,21 @@
+
+> bayscom-erp@0.1.0 build
+> next build --turbopack
+
+   ▲ Next.js 15.5.4 (Turbopack)
+
+   Creating an optimized production build ...
+ ✓ Finished writing to disk in 727ms
+ ✓ Compiled successfully in 7.6s
+   Skipping linting
+   Checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/105) ...
+Error occurred prerendering page "/fleet-haulage/pl-summary". Read more: https://nextjs.org/docs/messages/prerender-error
+ReferenceError: localStorage is not defined
+    at <unknown> (.next/server/chunks/ssr/[root-of-the-server]__d7e6e532._.js:1:4989)
+    at f (.next/server/chunks/ssr/[root-of-the-server]__d7e6e532._.js:1:4977) {
+  digest: '1433599630'
+}
+Export encountered an error on /fleet-haulage/pl-summary/page: /fleet-haulage/pl-summary, exiting the build.
+ ⨯ Next.js build worker exited with code: 1 and signal: null

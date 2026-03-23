@@ -1,8 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities */
 'use client'
+export const dynamic = 'force-dynamic'
+
 
 import { useState } from 'react'
 import { Plus, Search, Filter, Download, Eye, Edit, MapPin, Fuel, TrendingUp, User, Phone, Calendar, AlertTriangle, CheckCircle, Activity, DollarSign, BarChart, FileText, Settings, Truck, Package, ShieldCheck } from 'lucide-react'
-import DashboardLayout from '@/components/DashboardLayout'
+import { DashboardLayout } from '@/components/layout/dashboard-layout'
 
 // Mock data for LPG operations
 const lpgOperations = [

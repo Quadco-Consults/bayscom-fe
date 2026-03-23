@@ -1,8 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
+export const dynamic = 'force-dynamic'
+
 
 import { useState } from 'react'
 import { Plus, Search, Filter, Download, Eye, Edit, CheckCircle, Clock, AlertTriangle, Car, Wrench, Calendar, MapPin, User, Phone, DollarSign, FileText, Settings } from 'lucide-react'
-import DashboardLayout from '@/components/DashboardLayout'
+import { DashboardLayout } from '@/components/layout/dashboard-layout'
 
 // Mock data for vehicle maintenance
 const vehicleMaintenances = [

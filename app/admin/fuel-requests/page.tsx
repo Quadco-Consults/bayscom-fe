@@ -1,11 +1,39 @@
 'use client'
+export const dynamic = 'force-dynamic'
+
 
 import { useState } from 'react'
-import { Plus, Search, Filter, Download, Eye, Edit, CheckCircle, Clock, AlertTriangle, Fuel, Car, Calendar, MapPin, User, CreditCard, BarChart } from 'lucide-react'
-import DashboardLayout from '@/components/DashboardLayout'
+import { Plus, Search, Download, Eye, Edit, CheckCircle, Clock, AlertTriangle, Fuel, Car, User, CreditCard, BarChart } from 'lucide-react'
+import { DashboardLayout } from '@/components/layout/dashboard-layout'
+
+interface FuelRequest {
+  id: string
+  requestNumber: string
+  requestedBy: string
+  department: string
+  vehicle: string
+  plateNumber: string
+  driverName: string
+  fuelType: string
+  requestedQuantity: string
+  approvedQuantity: string
+  unitPrice: string
+  totalCost: string
+  purpose: string
+  destination: string
+  estimatedDistance: string
+  currentMileage: string
+  requestDate: string
+  requiredDate: string
+  status: string
+  priority: string
+  approvedBy: string
+  fillingStation: string
+  remarks: string
+}
 
 // Mock data for fuel requests
-const fuelRequests = [
+const fuelRequests: FuelRequest[] = [
   {
     id: 'FR001',
     requestNumber: 'FUEL-2024-001',
@@ -197,7 +225,7 @@ export default function FuelRequestsPage() {
   const [filterDepartment, setFilterDepartment] = useState('All')
   const [showNewRequestModal, setShowNewRequestModal] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
-  const [selectedRequest, setSelectedRequest] = useState<any>(null)
+  const [selectedRequest, setSelectedRequest] = useState<FuelRequest | null>(null)
 
   const filteredRequests = fuelRequests.filter(request => {
     const matchesSearch =

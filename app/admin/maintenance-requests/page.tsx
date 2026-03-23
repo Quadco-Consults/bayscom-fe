@@ -1,11 +1,32 @@
 'use client'
+export const dynamic = 'force-dynamic'
+
 
 import { useState } from 'react'
-import { Plus, Search, Filter, Download, Eye, Edit, CheckCircle, Clock, AlertTriangle, Wrench, Calendar, MapPin, User, Phone, Mail } from 'lucide-react'
-import DashboardLayout from '@/components/DashboardLayout'
+import { Plus, Search, Download, Eye, Edit, CheckCircle, Clock, AlertTriangle, Wrench, User, Phone, Mail, Calendar, MapPin } from 'lucide-react'
+import { DashboardLayout } from '@/components/layout/dashboard-layout'
+
+interface MaintenanceRequest {
+  id: string
+  title: string
+  type: string
+  priority: string
+  status: string
+  requestedBy: string
+  department: string
+  equipment: string
+  location: string
+  description: string
+  requestDate: string
+  scheduledDate: string
+  estimatedCost: string
+  assignedTechnician: string
+  phone: string
+  email: string
+}
 
 // Mock data for maintenance requests
-const maintenanceRequests = [
+const maintenanceRequests: MaintenanceRequest[] = [
   {
     id: 'MR001',
     title: 'Generator 1 Service',
@@ -154,7 +175,7 @@ export default function MaintenanceRequestsPage() {
   const [filterType, setFilterType] = useState('All')
   const [showNewRequestModal, setShowNewRequestModal] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
-  const [selectedRequest, setSelectedRequest] = useState<any>(null)
+  const [selectedRequest, setSelectedRequest] = useState<MaintenanceRequest | null>(null)
 
   const filteredRequests = maintenanceRequests.filter(request => {
     const matchesSearch =

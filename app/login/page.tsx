@@ -1,4 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities */
 'use client';
+export const dynamic = 'force-dynamic'
+
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';

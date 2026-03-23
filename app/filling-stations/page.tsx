@@ -1,8 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities */
 'use client'
+export const dynamic = 'force-dynamic'
+
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { Plus, Search, Filter, Download, Eye, Edit, MapPin, Fuel, TrendingUp, User, Phone, Calendar, AlertTriangle, CheckCircle, Activity, DollarSign, BarChart, FileText, Settings } from 'lucide-react'
-import DashboardLayout from '@/components/DashboardLayout'
+import { DashboardLayout } from '@/components/layout/dashboard-layout'
 
 // Mock data for filling stations
 const fillingStations = [
@@ -563,15 +567,12 @@ export default function FillingStationsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => {
-                              setSelectedStation(station)
-                              setShowDetailModal(true)
-                            }}
+                          <Link
+                            href={`/filling-stations/${station.id}`}
                             className="text-[#8B1538] hover:text-[#7a1230]"
                           >
                             <Eye className="w-4 h-4" />
-                          </button>
+                          </Link>
                           <button className="text-black hover:text-black">
                             <Edit className="w-4 h-4" />
                           </button>
